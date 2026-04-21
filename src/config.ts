@@ -42,7 +42,7 @@ const parseEncryptionKey = (b64: string): Buffer => {
 
 export const loadConfig = (): AppConfig => ({
   hostname: required("PDS_HOSTNAME"),
-  port: Number(process.env.PDS_PORT ?? process.env.PORT ?? "2583"),
+  port: Number(process.env.PDS_PORT || process.env.PORT || "2583"),
   eve: {
     clientId: required("EVE_CLIENT_ID"),
     clientSecret: required("EVE_CLIENT_SECRET"),

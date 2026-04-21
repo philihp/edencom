@@ -12,6 +12,8 @@ import { buildEveRouter, buildBlockerRouter } from './routes.js'
 
 const main = async (): Promise<void> => {
   const appCfg = loadConfig()
+  // Sync resolved port into PDS_PORT so @atproto/pds binds to the same port
+  process.env.PDS_PORT = String(appCfg.port)
 
   const dataDir = process.env.PDS_DATA_DIRECTORY ?? './data'
   fs.mkdirSync(dataDir, { recursive: true })
