@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import * as fs from 'node:fs'
 import * as https from 'node:https'
-import * as events from 'node:events'
+import { once } from 'node:events'
 import { PDS, envToCfg, envToSecrets, readEnv } from '@atproto/pds'
 import { loadConfig } from './config.js'
 import { openCharacterStore } from './character-store.js'
@@ -56,7 +56,7 @@ const main = async (): Promise<void> => {
     }
     const httpsServer = https.createServer(tlsOptions, pds.app)
     httpsServer.listen(httpsPort)
-    await events.once(httpsServer, 'listening')
+    await once(httpsServer, 'listening')
     console.log(`  HTTPS server listening on :${httpsPort}`)
     console.log(`  Start SSO flow at: https://${appCfg.hostname}:${httpsPort}/eve/login`)
   } else {
