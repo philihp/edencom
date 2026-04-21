@@ -41,17 +41,17 @@ const parseEncryptionKey = (b64: string): Buffer => {
 }
 
 export const loadConfig = (): AppConfig => ({
-  hostname: required('PDS_HOSTNAME'),
-  port: Number(required('PDS_PORT')),
+  hostname: required("PDS_HOSTNAME"),
+  port: Number(process.env.PDS_PORT ?? process.env.PORT ?? "2583"),
   eve: {
-    clientId: required('EVE_CLIENT_ID'),
-    clientSecret: required('EVE_CLIENT_SECRET'),
-    callbackUrl: required('EVE_CALLBACK_URL'),
-    scopes: splitScopes(required('EVE_SCOPES')),
-    contactEmail: required('EVE_CONTACT_EMAIL'),
+    clientId: required("EVE_CLIENT_ID"),
+    clientSecret: required("EVE_CLIENT_SECRET"),
+    callbackUrl: required("EVE_CALLBACK_URL"),
+    scopes: splitScopes(required("EVE_SCOPES")),
+    contactEmail: required("EVE_CONTACT_EMAIL"),
   },
-  tokenEncryptionKey: parseEncryptionKey(required('EVE_TOKEN_ENCRYPTION_KEY')),
-  supabaseUrl: required('SUPABASE_URL'),
-  supabaseSecretKey: required('SUPABASE_SECRET_KEY'),
-  webAppUrl: required('WEB_APP_URL'),
-})
+  tokenEncryptionKey: parseEncryptionKey(required("EVE_TOKEN_ENCRYPTION_KEY")),
+  supabaseUrl: required("SUPABASE_URL"),
+  supabaseSecretKey: required("SUPABASE_SECRET_KEY"),
+  webAppUrl: required("WEB_APP_URL"),
+});
