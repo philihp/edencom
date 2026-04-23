@@ -19,6 +19,9 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
+  "engines": {
+    "node": ">=20"
+  },
   "devDependencies": {
     "@tsconfig/next": "^2.0.1",
     "@types/node": "^20.0.0",
