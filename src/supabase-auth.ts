@@ -45,15 +45,17 @@ export const validateSupabasePassword = async (
   email: string,
   password: string,
   supabaseUrl: string,
-  // supabaseAnonKey: string,
   supabaseSecretKey: string,
 ): Promise<boolean> => {
   const res = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      // Service role key in Authorization causes GoTrue to skip CAPTCHA checks
+      // Both headers required: apikey identifies the project, Authorization
+      // with the service role key signals a trusted server call and bypasses
+      // CAPTCHA checks in GoTrue.
       Authorization: `Bearer ${supabaseSecretKey}`,
+      apikey: supabaseSecretKey,
     },
     body: JSON.stringify({ email, password }),
   });
