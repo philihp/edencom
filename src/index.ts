@@ -8,7 +8,7 @@ import { openCharacterStore } from './character-store.js'
 import { openTokenStore } from './token-store.js'
 import { openUserStore } from './user-store.js'
 import { createStateStore } from './state-store.js'
-import { buildEveRouter, buildBlockerRouter } from './routes.js'
+import { buildEveRouter, buildBlockerRouter, buildDebugRouter } from './routes.js'
 
 const main = async (): Promise<void> => {
   const appCfg = loadConfig()
@@ -33,17 +33,17 @@ const main = async (): Promise<void> => {
   if (!adminPassword) throw new Error('PDS_ADMIN_PASSWORD required')
 
   pds.app.use(buildBlockerRouter())
-  pds.app.use(
-    buildEveRouter({
-      config: appCfg,
-      stateStore,
-      characters,
-      tokens,
-      users,
-      pdsUrl,
-      adminPassword,
-    }),
-  )
+  const routerDeps = {
+    config: appCfg,
+    stateStore,
+    characters,
+    tokens,
+    users,
+    pdsUrl,
+    adminPassword,
+  }
+  pds.app.use(buildEveRouter(routerDeps))
+  pds.app.use(buildDebugRouter(routerDeps))
 
   // Our routers were appended after the PDS's own routes (registered in PDS.create()).
   // Insert them at index 2 — after Express's built-in query (0) and init (1) layers.
@@ -51,9 +51,10 @@ const main = async (): Promise<void> => {
   // methods. Inserting before it leaves res as a raw http.ServerResponse.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const stack = (pds.app as any)._router.stack as any[]
+  const debugLayer = stack.pop()
   const eveLayer = stack.pop()
   const blockerLayer = stack.pop()
-  stack.splice(2, 0, eveLayer, blockerLayer)
+  stack.splice(2, 0, eveLayer, blockerLayer, debugLayer)
 
   await pds.start()
   console.log(`EVE-gated PDS listening on :${appCfg.port}`)

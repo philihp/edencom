@@ -11,6 +11,7 @@ export interface UserCharacterBinding {
 export interface UserStore {
   readonly findByUserId: (userId: string) => UserCharacterBinding | null
   readonly findByCharacterId: (characterId: number) => UserCharacterBinding | null
+  readonly listAll: () => UserCharacterBinding[]
   readonly bind: (userId: string, characterId: number) => void
   readonly close: () => void
 }
@@ -39,12 +40,17 @@ export const openUserStore = (dataDir: string): UserStore => {
     `INSERT OR REPLACE INTO user_character_binding (supabase_user_id, character_id)
      VALUES (?, ?)`,
   )
+  const listAllStmt = db.prepare(
+    `SELECT supabase_user_id as supabaseUserId, character_id as characterId, bound_at as boundAt
+     FROM user_character_binding ORDER BY bound_at`,
+  )
 
   return {
     findByUserId: (userId) =>
       (findByUserStmt.get(userId) as UserCharacterBinding | undefined) ?? null,
     findByCharacterId: (characterId) =>
       (findByCharacterStmt.get(characterId) as UserCharacterBinding | undefined) ?? null,
+    listAll: () => listAllStmt.all() as UserCharacterBinding[],
     bind: (userId, characterId) => {
       bindStmt.run(userId, characterId)
     },

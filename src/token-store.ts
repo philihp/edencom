@@ -12,9 +12,18 @@ export interface StoredTokens {
   readonly invalidatedAt: number | null // non-null = refresh failed, don't use
 }
 
+export interface TokenMeta {
+  readonly characterId: number
+  readonly accessExpiresAt: number
+  readonly scopes: ReadonlyArray<string>
+  readonly invalidatedAt: number | null
+  readonly invalidatedReason: string | null
+}
+
 export interface TokenStore {
   readonly upsert: (t: StoredTokens) => void
   readonly get: (characterId: number) => StoredTokens | null
+  readonly listAllMeta: () => TokenMeta[]
   readonly markInvalid: (characterId: number, reason: string) => void
   readonly close: () => void
 }
@@ -73,6 +82,10 @@ export const openTokenStore = (
            invalidated_reason = ?
      WHERE character_id = ?
   `)
+  const listAllMetaStmt = db.prepare(
+    `SELECT character_id, access_expires_at, scopes, invalidated_at, invalidated_reason
+     FROM eve_token ORDER BY character_id`,
+  )
 
   const rowToTokens = (row: TokenRow): StoredTokens => ({
     characterId: row.character_id,
@@ -97,6 +110,20 @@ export const openTokenStore = (
       const row = getStmt.get(id) as TokenRow | undefined
       return row ? rowToTokens(row) : null
     },
+    listAllMeta: () =>
+      (listAllMetaStmt.all() as Array<{
+        character_id: number
+        access_expires_at: number
+        scopes: string
+        invalidated_at: number | null
+        invalidated_reason: string | null
+      }>).map((r) => ({
+        characterId: r.character_id,
+        accessExpiresAt: r.access_expires_at,
+        scopes: r.scopes === '' ? [] : r.scopes.split(' '),
+        invalidatedAt: r.invalidated_at,
+        invalidatedReason: r.invalidated_reason,
+      })),
     markInvalid: (id, reason) => {
       invalidateStmt.run(reason, id)
     },

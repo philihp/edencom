@@ -18,6 +18,7 @@ export interface CharacterStore {
   readonly findByCharacterId: (id: number) => CharacterMapping | null
   readonly findByDid: (did: string) => CharacterMapping | null
   readonly findByHandle: (handle: string) => CharacterMapping | null
+  readonly listAll: () => CharacterMapping[]
   readonly insert: (m: Omit<CharacterMapping, 'createdAt'>) => void
   readonly updateOwner: (id: number, owner: string) => void
   readonly close: () => void
@@ -56,6 +57,10 @@ export const openCharacterStore = (dataDir: string): CharacterStore => {
   const updateOwnerStmt = db.prepare(
     `UPDATE character_account SET owner = ? WHERE character_id = ?`,
   )
+  const listAllStmt = db.prepare(
+    `SELECT character_id as characterId, did, handle, owner, created_at as createdAt
+     FROM character_account ORDER BY created_at`,
+  )
 
   return {
     findByCharacterId: (id) =>
@@ -64,6 +69,7 @@ export const openCharacterStore = (dataDir: string): CharacterStore => {
       (findByDidStmt.get(did) as CharacterMapping | undefined) ?? null,
     findByHandle: (handle) =>
       (findByHandleStmt.get(handle) as CharacterMapping | undefined) ?? null,
+    listAll: () => listAllStmt.all() as CharacterMapping[],
     insert: ({ characterId, did, handle, owner }) => {
       insertStmt.run(characterId, did, handle, owner)
     },

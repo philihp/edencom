@@ -357,3 +357,44 @@ export const buildBlockerRouter = (): Router => {
   router.post('/xrpc/com.atproto.server.createAccount', blockPasswordAuth)
   return router
 }
+
+// --- Debug router (temporary) ------------------------------------------------
+
+export const buildDebugRouter = (deps: RouterDeps): Router => {
+  const router = express.Router()
+
+  router.get('/debug/stores', (_req, res) => {
+    const characters = deps.characters.listAll()
+    const users = deps.users.listAll()
+    const tokens = deps.tokens.listAllMeta()
+
+    // Join everything together for easy reading
+    const enriched = characters.map((c) => {
+      const user = deps.users.findByCharacterId(c.characterId)
+      const token = tokens.find((t) => t.characterId === c.characterId)
+      return {
+        character: c,
+        supabaseUserId: user?.supabaseUserId ?? null,
+        boundAt: user?.boundAt ?? null,
+        token: token
+          ? {
+              accessExpiresAt: new Date(token.accessExpiresAt).toISOString(),
+              scopes: token.scopes,
+              valid: token.invalidatedAt === null,
+              invalidatedReason: token.invalidatedReason,
+            }
+          : null,
+      }
+    })
+
+    res.json({
+      characters: enriched,
+      unboundUsers: users.filter(
+        (u) => !characters.some((c) => c.characterId === u.characterId),
+      ),
+      tokenCount: tokens.length,
+    })
+  })
+
+  return router
+}
