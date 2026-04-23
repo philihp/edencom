@@ -45,15 +45,21 @@ export const validateSupabasePassword = async (
   email: string,
   password: string,
   supabaseUrl: string,
-  supabaseSecretKey: string,
+  supabaseAnonKey: string,
 ): Promise<boolean> => {
   const res = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      apikey: supabaseSecretKey,
+      apikey: supabaseAnonKey,
     },
     body: JSON.stringify({ email, password }),
   })
+
+  if (!res.ok) {
+    const body = await res.text()
+    console.error(`[supabase-auth] password validation failed for ${email}: HTTP ${res.status} – ${body}`)
+  }
+
   return res.ok
 }

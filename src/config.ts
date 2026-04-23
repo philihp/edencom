@@ -14,6 +14,7 @@ export interface AppConfig {
   readonly eve: EveConfig
   readonly tokenEncryptionKey: Buffer
   readonly supabaseUrl: string
+  readonly supabaseAnonKey: string
   readonly supabaseSecretKey: string
   readonly webAppUrl: string
 }
@@ -52,6 +53,7 @@ export const loadConfig = (): AppConfig => ({
   },
   tokenEncryptionKey: parseEncryptionKey(required("EVE_TOKEN_ENCRYPTION_KEY")),
   supabaseUrl: required("SUPABASE_URL"),
+  supabaseAnonKey: required("SUPABASE_ANON_KEY"),
   supabaseSecretKey: required("SUPABASE_SECRET_KEY"),
   webAppUrl: required("WEB_APP_URL"),
 });
