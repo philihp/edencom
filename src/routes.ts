@@ -345,7 +345,7 @@ export const buildEveRouter = (deps: RouterDeps): Router => {
   router.get('/eve/callback', handleCallback(deps))
   router.get('/eve/me/ship', handleMyShip(deps))
   router.get('/api/account', handleGetAccount(deps))
-  router.post('/xrpc/com.atproto.server.createSession', handleCreateSession(deps))
+  router.post('/xrpc/com.atproto.server.createSession', express.json(), handleCreateSession(deps))
   return router
 }
 

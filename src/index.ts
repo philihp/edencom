@@ -45,6 +45,12 @@ const main = async (): Promise<void> => {
     }),
   )
 
+  // Our routers were appended after the PDS's own routes (registered in PDS.create()).
+  // Move the two layers we just added to the front so they intercept first.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const stack = (pds.app as any)._router.stack as any[]
+  stack.unshift(stack.pop(), stack.pop())
+
   await pds.start()
   console.log(`EVE-gated PDS listening on :${appCfg.port}`)
 
