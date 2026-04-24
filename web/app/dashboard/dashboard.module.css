@@ -55,7 +55,7 @@
 .title {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--color-text);
 }
 
 .email {
@@ -77,14 +77,14 @@
 }
 
 .banner[data-variant='success'] {
-  background: rgb(76 175 125 / 0.12);
-  border: 1px solid rgb(76 175 125 / 0.35);
+  background: rgb(76 175 125 / 0.15);
+  border: 1px solid rgb(76 175 125 / 0.4);
   color: var(--color-success);
 }
 
 .banner[data-variant='error'] {
-  background: rgb(224 82 82 / 0.1);
-  border: 1px solid rgb(224 82 82 / 0.3);
+  background: rgb(234 129 137 / 0.2);
+  border: 1px solid rgb(234 129 137 / 0.5);
   color: var(--color-danger);
 }
 
@@ -114,7 +114,7 @@
 .characterValue {
   font-size: 1rem;
   font-weight: 500;
-  color: #fff;
+  color: var(--color-text);
 }
 
 .did {

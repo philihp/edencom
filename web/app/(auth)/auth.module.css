@@ -18,7 +18,7 @@
 .title {
   font-size: 1.6rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--color-text);
   margin-bottom: 8px;
 }
 
@@ -67,8 +67,8 @@
 .error {
   font-size: 0.85rem;
   color: var(--color-danger);
-  background: rgb(224 82 82 / 0.1);
-  border: 1px solid rgb(224 82 82 / 0.3);
+  background: rgb(234 129 137 / 0.2);
+  border: 1px solid rgb(234 129 137 / 0.5);
   border-radius: var(--radius);
   padding: 10px 12px;
 }
