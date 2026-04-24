@@ -318,7 +318,7 @@ const handleCreateSession =
       email,
       password,
       deps.config.supabaseUrl,
-      deps.config.supabaseSecretKey,
+      deps.config.supabaseAnonKey,
     );
     console.log(`[createSession] password valid=${valid}`)
     if (!valid) {

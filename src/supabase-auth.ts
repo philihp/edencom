@@ -38,9 +38,11 @@ export const validateSupabasePassword = async (
   email: string,
   password: string,
   supabaseUrl: string,
-  supabaseSecretKey: string,
+  supabaseAnonKey: string,
 ): Promise<boolean> => {
-  const supabase = makeAdminClient(supabaseUrl, supabaseSecretKey)
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
   const { error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) {
     console.error(`[supabase-auth] password validation failed for ${email}: ${error.message}`)
