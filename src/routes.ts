@@ -314,8 +314,11 @@ const handleCreateSession =
     }
 
     // Fetch their email so we can validate the password.
-    const email = await getSupabaseUserEmail(binding.supabaseUserId, deps.config.supabaseUrl, deps.config.supabaseSecretKey)
-    console.log(`[createSession] identifier=${identifier} supabaseUserId=${binding.supabaseUserId} email=${email ?? '(not found)'}`)
+    const email = await getSupabaseUserEmail(
+      binding.supabaseUserId,
+      deps.config.supabaseUrl,
+      deps.config.supabaseSecretKey,
+    );
     if (!email) {
       res.status(500).json({
         error: "InternalError",
