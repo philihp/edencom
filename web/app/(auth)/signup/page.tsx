@@ -4,17 +4,13 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Turnstile } from '@/components/Turnstile'
 import styles from '../auth.module.css'
-
-const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!
 
 export default function SignupPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
@@ -31,10 +27,6 @@ export default function SignupPage() {
       setError('Password must be at least 8 characters.')
       return
     }
-    if (!captchaToken) {
-      setError('Please complete the captcha.')
-      return
-    }
 
     setLoading(true)
     const supabase = createClient()
@@ -43,7 +35,6 @@ export default function SignupPage() {
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
-        // captchaToken,
       },
     })
 
@@ -123,18 +114,8 @@ export default function SignupPage() {
               placeholder="••••••••"
             />
           </div>
-          <Turnstile
-            siteKey={TURNSTILE_SITE_KEY}
-            onSuccess={setCaptchaToken}
-            onExpire={() => setCaptchaToken(null)}
-            options={{ theme: 'dark' }}
-          />
           {error && <p className={styles.error}>{error}</p>}
-          <button
-            type="submit"
-            className={styles.submit}
-            disabled={loading || !captchaToken}
-          >
+          <button type="submit" className={styles.submit} disabled={loading}>
             {loading ? 'Creating account…' : 'Create Account'}
           </button>
         </form>

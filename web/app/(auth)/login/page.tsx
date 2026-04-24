@@ -4,17 +4,13 @@ import { Suspense, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Turnstile } from '@/components/Turnstile'
 import styles from '../auth.module.css'
-
-const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!
 
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(searchParams.get('error'))
   const [loading, setLoading] = useState(false)
 
@@ -24,13 +20,7 @@ function LoginForm() {
     setLoading(true)
 
     const supabase = createClient()
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-      options: {
-        // captchaToken: captchaToken!,
-      },
-    })
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
 
     if (authError) {
       setError(authError.message)
@@ -76,12 +66,6 @@ function LoginForm() {
               placeholder="••••••••"
             />
           </div>
-          <Turnstile
-            siteKey={TURNSTILE_SITE_KEY}
-            onSuccess={setCaptchaToken}
-            onExpire={() => setCaptchaToken(null)}
-            options={{ theme: 'dark' }}
-          />
 
           {error && <p className={styles.error}>{error}</p>}
 
