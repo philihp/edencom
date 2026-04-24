@@ -4,7 +4,6 @@ import { Suspense, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import styles from '../auth.module.css'
 
 function LoginForm() {
   const router = useRouter()
@@ -33,16 +32,17 @@ function LoginForm() {
   }
 
   return (
-    <main className={styles.main}>
-      <div className={styles.card}>
-        <h1 className={styles.title}>Sign In</h1>
-        <p className={styles.subtitle}>
-          New here? <Link href="/signup">Create an account</Link>
-        </p>
+    <main>
+      <h1>Sign In</h1>
+      <p>
+        New here? <Link href="/signup">Create an account</Link>
+      </p>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.field}>
-            <label htmlFor="email">Email</label>
+      <form onSubmit={handleSubmit}>
+        <p>
+          <label htmlFor="email">
+            Email
+            <br />
             <input
               id="email"
               type="email"
@@ -52,10 +52,12 @@ function LoginForm() {
               autoComplete="email"
               placeholder="pilot@example.com"
             />
-          </div>
-
-          <div className={styles.field}>
-            <label htmlFor="password">Password</label>
+          </label>
+        </p>
+        <p>
+          <label htmlFor="password">
+            Password
+            <br />
             <input
               id="password"
               type="password"
@@ -63,17 +65,14 @@ function LoginForm() {
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="current-password"
-              placeholder="••••••••"
             />
-          </div>
-
-          {error && <p className={styles.error}>{error}</p>}
-
-          <button type="submit" className={styles.submit} disabled={loading}>
-            {loading ? 'Signing in…' : 'Sign In'}
-          </button>
-        </form>
-      </div>
+          </label>
+        </p>
+        {error && <p><strong>Error:</strong> {error}</p>}
+        <button type="submit" disabled={loading}>
+          {loading ? 'Signing in…' : 'Sign In'}
+        </button>
+      </form>
     </main>
   )
 }

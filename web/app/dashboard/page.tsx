@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { startEveBinding, signOut } from './actions'
-import styles from './dashboard.module.css'
 
 interface AccountData {
   bound: boolean
@@ -49,80 +48,68 @@ export default async function DashboardPage({
   const bindingError = params.eve_error
 
   return (
-    <main className={styles.main}>
-      <header className={styles.header}>
-        <span className={styles.logo}>Edencom Social</span>
-        <form action={signOut}>
-          <button type="submit" className={styles.signOutBtn}>
-            Sign Out
-          </button>
-        </form>
-      </header>
+    <main>
+      <h1>Your Account</h1>
 
-      <div className={styles.content}>
-        <section className={styles.section}>
-          <h1 className={styles.title}>Your Account</h1>
-          <p className={styles.email}>{user.email}</p>
-        </section>
+      {justBound && (
+        <fieldset>
+          <legend>Success</legend>EVE character successfully linked to your account.
+        </fieldset>
+      )}
+      {bindingError && (
+        <fieldset>
+          <legend>Failed</legend>
+          {bindingError}
+        </fieldset>
+      )}
 
-        {justBound && (
-          <div className={styles.banner} data-variant="success">
-            EVE character successfully linked to your account.
-          </div>
-        )}
+      <p>
+        You are logged in as <var>{user.email}</var>
+      </p>
 
-        {bindingError && (
-          <div className={styles.banner} data-variant="error">
-            EVE binding failed: {bindingError}
-          </div>
-        )}
+      <form action={signOut} style={{ display: 'inline' }}>
+        <button type="submit">Sign Out</button>
+      </form>
 
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>EVE Online Identity</h2>
+      <h2>EVE Online Identity</h2>
 
-          {account.bound ? (
-            <div className={styles.characterCard}>
-              <div className={styles.characterInfo}>
-                <span className={styles.characterLabel}>Handle</span>
-                <span className={styles.characterValue}>
-                  @{account.handle}
-                </span>
-              </div>
-              <div className={styles.characterInfo}>
-                <span className={styles.characterLabel}>Character ID</span>
-                <span className={styles.characterValue}>
-                  {account.characterId}
-                </span>
-              </div>
-              <div className={styles.characterInfo}>
-                <span className={styles.characterLabel}>DID</span>
-                <code className={styles.did}>{account.did}</code>
-              </div>
-              <p className={styles.hint}>
-                To re-link a different character, use the button below. This
-                will replace your current binding.
-              </p>
-              <form action={startEveBinding}>
-                <button type="submit" className={styles.rebindBtn}>
-                  Switch Character
-                </button>
-              </form>
-            </div>
-          ) : (
-            <div className={styles.emptyCard}>
-              <p>
-                No EVE character linked yet. Connect your pilot to get your AT
-                Protocol handle and join the network.
-              </p>
-              <form action={startEveBinding}>
-                <button type="submit" className={styles.bindBtn}>
-                  Connect EVE Character
-                </button>
-              </form>
-            </div>
-          )}
-        </section>
-      </div>
+      {account.bound ? (
+        <div>
+          <dl>
+            <dt>Handle</dt>
+            <dd>
+              <var>{account.handle}</var>
+            </dd>
+            <dt>Character ID</dt>
+            <dd>
+              <var>{account.characterId}</var>
+            </dd>
+            <dt>DID</dt>
+            <dd>
+              <var>
+                <code>{account.did}</code>
+              </var>
+            </dd>
+          </dl>
+          <p>
+            To re-link a different character, use the button below. This will replace your
+            current binding.
+          </p>
+          <form action={startEveBinding}>
+            <button type="submit">Switch Character</button>
+          </form>
+        </div>
+      ) : (
+        <div>
+          <p>
+            No EVE character linked yet. Connect your pilot to get your AT Protocol handle
+            and join the network.
+          </p>
+          <form action={startEveBinding}>
+            <button type="submit">Connect EVE Identity</button>
+          </form>
+        </div>
+      )}
     </main>
   )
 }

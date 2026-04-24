@@ -2,12 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import styles from '../auth.module.css'
 
 export default function SignupPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -33,16 +30,11 @@ export default function SignupPage() {
     const { error: authError } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
     })
 
     if (authError) {
-      setError(
-        authError.message ||
-          'Sign up failed. Check that your email is valid and try again.',
-      )
+      setError(authError.message || 'Sign up failed. Check that your email is valid and try again.')
       setLoading(false)
       return
     }
@@ -53,32 +45,29 @@ export default function SignupPage() {
 
   if (done) {
     return (
-      <main className={styles.main}>
-        <div className={styles.card}>
-          <h1 className={styles.title}>Check your inbox</h1>
-          <p className={styles.subtitle}>
-            We sent a confirmation link to <strong>{email}</strong>. Click it to activate
-            your account, then come back to sign in.
-          </p>
-          <Link href="/login" className={styles.link}>
-            Back to sign in
-          </Link>
-        </div>
+      <main>
+        <h1>Check your inbox</h1>
+        <p>
+          We sent a confirmation link to <strong>{email}</strong>. Click it to activate your
+          account, then come back to sign in.
+        </p>
+        <Link href="/login">Back to sign in</Link>
       </main>
     )
   }
 
   return (
-    <main className={styles.main}>
-      <div className={styles.card}>
-        <h1 className={styles.title}>Create Account</h1>
-        <p className={styles.subtitle}>
-          Already have one? <Link href="/login">Sign in</Link>
-        </p>
+    <main>
+      <h1>Create Account</h1>
+      <p>
+        Already have one? <Link href="/login">Sign in</Link>
+      </p>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.field}>
-            <label htmlFor="email">Email</label>
+      <form onSubmit={handleSubmit}>
+        <p>
+          <label htmlFor="email">
+            Email
+            <br />
             <input
               id="email"
               type="email"
@@ -88,9 +77,12 @@ export default function SignupPage() {
               autoComplete="email"
               placeholder="pilot@example.com"
             />
-          </div>
-          <div className={styles.field}>
-            <label htmlFor="password">Password</label>
+          </label>
+        </p>
+        <p>
+          <label htmlFor="password">
+            Password
+            <br />
             <input
               id="password"
               type="password"
@@ -98,12 +90,14 @@ export default function SignupPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="new-password"
-              placeholder="••••••••"
               minLength={8}
             />
-          </div>
-          <div className={styles.field}>
-            <label htmlFor="confirm">Confirm Password</label>
+          </label>
+        </p>
+        <p>
+          <label htmlFor="confirm">
+            Confirm Password
+            <br />
             <input
               id="confirm"
               type="password"
@@ -111,15 +105,14 @@ export default function SignupPage() {
               onChange={(e) => setConfirm(e.target.value)}
               required
               autoComplete="new-password"
-              placeholder="••••••••"
             />
-          </div>
-          {error && <p className={styles.error}>{error}</p>}
-          <button type="submit" className={styles.submit} disabled={loading}>
-            {loading ? 'Creating account…' : 'Create Account'}
-          </button>
-        </form>
-      </div>
+          </label>
+        </p>
+        {error && <p><strong>Error:</strong> {error}</p>}
+        <button type="submit" disabled={loading}>
+          {loading ? 'Creating account…' : 'Create Account'}
+        </button>
+      </form>
     </main>
   )
 }
