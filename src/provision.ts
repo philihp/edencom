@@ -201,6 +201,11 @@ export const provisionSession = async (
 
   // New character - create an account.
   const primaryHandle = handleFor(deps.pdsHostname, char.characterName)
+  console.log({
+    primaryHandle,
+    pdsHostname: deps.pdsHostname,
+    characterName: char.characterName,
+  });
   let handle = primaryHandle
   let created
   try {
