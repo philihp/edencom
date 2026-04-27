@@ -4,6 +4,16 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [{ hostname: 'images.evetech.net' }],
   },
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'edencom.social' }],
+        destination: 'https://edencom.link/:path*',
+        permanent: false,
+      },
+    ]
+  },
   async headers() {
     return [
       {
