@@ -2,6 +2,7 @@ import Image from 'next/image'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { startEveBinding, signOut } from './actions'
+import Link from 'next/link'
 
 interface AccountData {
   bound: boolean
@@ -85,7 +86,11 @@ export default async function DashboardPage({
           <dl>
             <dt>Handle</dt>
             <dd>
-              <var>{account.handle}</var>
+              <var>
+                <Link href={`http://bsky.app/profile/${account.handle}`}>
+                  {account.handle}
+                </Link>
+              </var>
             </dd>
             <dt>Character ID</dt>
             <dd>
