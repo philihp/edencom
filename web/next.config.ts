@@ -8,8 +8,8 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/:path*',
-        has: [{ type: 'host', value: 'edencom.social' }],
-        destination: 'https://edencom.link/:path*',
+        has: [{ type: 'host', value: 'edencom.link' }],
+        destination: 'https://edencom.social/:path*',
         permanent: false,
       },
     ]
