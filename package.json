@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@edencom/character-slug": "workspace:*",
     "@atproto/api": "^0.13.0",
     "@atproto/pds": "^0.4.217",
     "@supabase/supabase-js": "^2.104.1",

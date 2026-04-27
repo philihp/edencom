@@ -208,16 +208,21 @@ export const provisionSession = async (
     // is sold. We DO NOT let a new owner assume the existing atproto DID -
     // that would hand them the previous owner's repo.
     if (existing.owner !== char.owner) {
+      console.error(
+        `observed ownership change on ${char.characterId} from ${existing.owner} to ${char.owner}`,
+      );
       throw new Error(
-        'EVE character appears to have changed ownership. ' +
-          'This account is locked and must be manually reviewed.',
-      )
+        "EVE character appears to have changed ownership. " +
+          "Please contact an Edencom PDS support for manual review.",
+      );
     }
     persistEveTokens()
     const session = await resetAndLogin(deps, existing.did)
-    setEveProfile(deps.pdsUrl, session, char, existing.createdAt).catch((err) =>
-      console.error('setEveProfile failed for', char.characterId, err),
-    )
+    setEveProfile(deps.pdsUrl, session, char, existing.createdAt).catch(
+      (err) => {
+        console.error(`setEveProfile failed for${char.characterId}`, err);
+      },
+    );
     return session
   }
 
