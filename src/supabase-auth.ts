@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from "@supabase/supabase-js"
 
 const makeAdminClient = (supabaseUrl: string, supabaseSecretKey: string) =>
   createClient(supabaseUrl, supabaseSecretKey, {
@@ -10,8 +10,8 @@ export const extractSupabaseUser = async (
   supabaseUrl: string,
   supabaseSecretKey: string,
 ): Promise<string | null> => {
-  if (!authorizationHeader?.startsWith('Bearer ')) return null
-  const token = authorizationHeader.slice('Bearer '.length)
+  if (!authorizationHeader?.startsWith("Bearer ")) return null
+  const token = authorizationHeader.slice("Bearer ".length)
 
   const supabase = createClient(supabaseUrl, supabaseSecretKey, {
     auth: { autoRefreshToken: false, persistSession: false },
@@ -45,7 +45,9 @@ export const validateSupabasePassword = async (
   })
   const { error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) {
-    console.error(`[supabase-auth] password validation failed for ${email}: ${error.message}`)
+    console.error(
+      `[supabase-auth] password validation failed for ${email}: ${error.message}`,
+    )
   }
   return !error
 }

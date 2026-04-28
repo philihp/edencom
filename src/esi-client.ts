@@ -1,13 +1,13 @@
-import * as R from 'ramda'
-import type { EveConfig } from './config.js'
-import type { TokenStore, StoredTokens } from './token-store.js'
+import * as R from "ramda"
+import type { EveConfig } from "./config.js"
+import type { TokenStore, StoredTokens } from "./token-store.js"
 import {
   refreshAccessToken,
   TokenRefreshError,
   verifyAccessToken,
-} from './eve-sso.js'
+} from "./eve-sso.js"
 
-const ESI_BASE = 'https://esi.evetech.net/latest'
+const ESI_BASE = "https://esi.evetech.net/latest"
 const ACCESS_TOKEN_SLACK_MS = 30_000 // refresh when <30s remaining
 
 // --- Error-limit tracking -------------------------------------------------
@@ -27,8 +27,8 @@ const errorLimit: ErrorLimitState = {
 }
 
 const updateErrorLimit = (headers: Headers): void => {
-  const remain = headers.get('x-esi-error-limit-remain')
-  const reset = headers.get('x-esi-error-limit-reset')
+  const remain = headers.get("x-esi-error-limit-remain")
+  const reset = headers.get("x-esi-error-limit-reset")
   if (remain !== null) errorLimit.remaining = Number(remain)
   if (reset !== null) errorLimit.resetAt = Date.now() + Number(reset) * 1000
 }
@@ -44,7 +44,7 @@ const errorLimitIsHealthy = (): boolean => {
 // --- User-Agent -----------------------------------------------------------
 
 const buildUserAgent = (cfg: EveConfig): string =>
-  `eve-pds/0.1.0 (${cfg.contactEmail}; +https://edencom.link/) atproto-pds/eve-sso`;
+  `eve-pds/0.1.0 (${cfg.contactEmail}; +https://edencom.link/) atproto-pds/eve-sso`
 
 // --- Token freshness ------------------------------------------------------
 
@@ -59,9 +59,12 @@ const isAccessTokenFresh = (t: StoredTokens): boolean =>
  * should surface this to the user with "please re-authenticate via /eve/login".
  */
 export class TokensInvalidatedError extends Error {
-  constructor(readonly characterId: number, reason: string) {
+  constructor(
+    readonly characterId: number,
+    reason: string,
+  ) {
     super(`EVE tokens invalidated for character ${characterId}: ${reason}`)
-    this.name = 'TokensInvalidatedError'
+    this.name = "TokensInvalidatedError"
   }
 }
 
@@ -72,10 +75,10 @@ export const ensureFreshAccessToken = async (
 ): Promise<string> => {
   const stored = store.get(characterId)
   if (!stored) {
-    throw new TokensInvalidatedError(characterId, 'no tokens stored')
+    throw new TokensInvalidatedError(characterId, "no tokens stored")
   }
   if (stored.invalidatedAt !== null) {
-    throw new TokensInvalidatedError(characterId, 'previously invalidated')
+    throw new TokensInvalidatedError(characterId, "previously invalidated")
   }
   if (isAccessTokenFresh(stored)) {
     return stored.accessToken
@@ -128,10 +131,10 @@ const parseDate = (v: string | null): Date | null => {
 
 const extractCacheHeaders = (
   res: Response,
-): Omit<EsiResponse<unknown>, 'data'> => ({
-  expires: parseDate(res.headers.get('expires')),
-  lastModified: parseDate(res.headers.get('last-modified')),
-  etag: res.headers.get('etag'),
+): Omit<EsiResponse<unknown>, "data"> => ({
+  expires: parseDate(res.headers.get("expires")),
+  lastModified: parseDate(res.headers.get("last-modified")),
+  etag: res.headers.get("etag"),
 })
 
 export class EsiError extends Error {
@@ -141,14 +144,14 @@ export class EsiError extends Error {
     readonly body: string,
   ) {
     super(message)
-    this.name = 'EsiError'
+    this.name = "EsiError"
   }
 }
 
 export class EsiRateLimitedError extends Error {
   constructor(readonly retryAfterMs: number) {
     super(`ESI error-limit window exhausted; retry in ${retryAfterMs}ms`)
-    this.name = 'EsiRateLimitedError'
+    this.name = "EsiRateLimitedError"
   }
 }
 
@@ -181,10 +184,10 @@ export const callEsi = async <T>(
 
   const headers: Record<string, string> = {
     Authorization: `Bearer ${accessToken}`,
-    'User-Agent': buildUserAgent(deps.cfg),
-    Accept: 'application/json',
+    "User-Agent": buildUserAgent(deps.cfg),
+    Accept: "application/json",
   }
-  if (opts.etag) headers['If-None-Match'] = opts.etag
+  if (opts.etag) headers["If-None-Match"] = opts.etag
 
   const res = await fetch(`${ESI_BASE}${path}`, { headers })
   updateErrorLimit(res.headers)
@@ -211,7 +214,11 @@ export const callEsi = async <T>(
         text,
       )
     }
-    throw new EsiError(`ESI ${res.status} on ${path}: ${text}`, res.status, text)
+    throw new EsiError(
+      `ESI ${res.status} on ${path}: ${text}`,
+      res.status,
+      text,
+    )
   }
   const data = (await res.json()) as T
   return { data, ...extractCacheHeaders(res) }

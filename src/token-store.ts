@@ -1,7 +1,7 @@
-import Database from 'better-sqlite3'
-import * as path from 'node:path'
-import * as fs from 'node:fs'
-import { encryptToken, decryptToken } from './crypto.js'
+import Database from "better-sqlite3"
+import * as path from "node:path"
+import * as fs from "node:fs"
+import { encryptToken, decryptToken } from "./crypto.js"
 
 export interface StoredTokens {
   readonly characterId: number
@@ -43,9 +43,9 @@ export const openTokenStore = (
   encryptionKey: Buffer,
 ): TokenStore => {
   fs.mkdirSync(dataDir, { recursive: true })
-  const db = new Database(path.join(dataDir, 'eve-tokens.sqlite'))
-  db.pragma('journal_mode = WAL')
-  db.pragma('synchronous = NORMAL')
+  const db = new Database(path.join(dataDir, "eve-tokens.sqlite"))
+  db.pragma("journal_mode = WAL")
+  db.pragma("synchronous = NORMAL")
   db.exec(`
     CREATE TABLE IF NOT EXISTS eve_token (
       character_id       INTEGER PRIMARY KEY,
@@ -73,9 +73,7 @@ export const openTokenStore = (
       invalidated_reason = NULL,
       updated_at         = unixepoch() * 1000
   `)
-  const getStmt = db.prepare(
-    `SELECT * FROM eve_token WHERE character_id = ?`,
-  )
+  const getStmt = db.prepare(`SELECT * FROM eve_token WHERE character_id = ?`)
   const invalidateStmt = db.prepare(`
     UPDATE eve_token
        SET invalidated_at = unixepoch() * 1000,
@@ -92,7 +90,7 @@ export const openTokenStore = (
     accessToken: decryptToken(encryptionKey, row.access_ct),
     refreshToken: decryptToken(encryptionKey, row.refresh_ct),
     accessExpiresAt: row.access_expires_at,
-    scopes: row.scopes === '' ? [] : row.scopes.split(' '),
+    scopes: row.scopes === "" ? [] : row.scopes.split(" "),
     invalidatedAt: row.invalidated_at,
   })
 
@@ -103,7 +101,7 @@ export const openTokenStore = (
         encryptToken(encryptionKey, t.accessToken),
         encryptToken(encryptionKey, t.refreshToken),
         t.accessExpiresAt,
-        t.scopes.join(' '),
+        t.scopes.join(" "),
       )
     },
     get: (id) => {
@@ -111,16 +109,18 @@ export const openTokenStore = (
       return row ? rowToTokens(row) : null
     },
     listAllMeta: () =>
-      (listAllMetaStmt.all() as Array<{
-        character_id: number
-        access_expires_at: number
-        scopes: string
-        invalidated_at: number | null
-        invalidated_reason: string | null
-      }>).map((r) => ({
+      (
+        listAllMetaStmt.all() as Array<{
+          character_id: number
+          access_expires_at: number
+          scopes: string
+          invalidated_at: number | null
+          invalidated_reason: string | null
+        }>
+      ).map((r) => ({
         characterId: r.character_id,
         accessExpiresAt: r.access_expires_at,
-        scopes: r.scopes === '' ? [] : r.scopes.split(' '),
+        scopes: r.scopes === "" ? [] : r.scopes.split(" "),
         invalidatedAt: r.invalidated_at,
         invalidatedReason: r.invalidated_reason,
       })),

@@ -1,11 +1,11 @@
-import * as crypto from 'node:crypto'
-import { AtpAgent } from '@atproto/api'
-import type { EveConfig } from './config.js'
-import type { EveCharacter } from './identity.js'
-import { handleFor, handleForWithId } from './identity.js'
-import type { CharacterStore } from './character-store.js'
-import type { TokenStore } from './token-store.js'
-import type { TokenResponse } from './eve-sso.js'
+import * as crypto from "node:crypto"
+import { AtpAgent } from "@atproto/api"
+import type { EveConfig } from "./config.js"
+import type { EveCharacter } from "./identity.js"
+import { handleFor, handleForWithId } from "./identity.js"
+import type { CharacterStore } from "./character-store.js"
+import type { TokenStore } from "./token-store.js"
+import type { TokenResponse } from "./eve-sso.js"
 
 export interface AtpSession {
   readonly did: string
@@ -20,11 +20,11 @@ export interface AdminDeps {
 }
 
 export interface ProvisionDeps extends AdminDeps {
-  readonly pdsHostname: string;
-  readonly pdsServiceHandleDomains: string;
-  readonly characters: CharacterStore;
-  readonly tokens: TokenStore;
-  readonly eveCfg: EveConfig;
+  readonly pdsHostname: string
+  readonly pdsServiceHandleDomains: string
+  readonly characters: CharacterStore
+  readonly tokens: TokenStore
+  readonly eveCfg: EveConfig
 }
 
 // EVE SSO is the sole credential, but the PDS still wants a password field
@@ -39,10 +39,10 @@ export interface ProvisionDeps extends AdminDeps {
 // (b) is cleaner - no secret at rest - so we use admin updateAccountPassword.
 
 const generatePassword = (): string =>
-  crypto.randomBytes(32).toString('base64url')
+  crypto.randomBytes(32).toString("base64url")
 
 const adminAuth = (password: string): string =>
-  'Basic ' + Buffer.from(`admin:${password}`).toString('base64')
+  "Basic " + Buffer.from(`admin:${password}`).toString("base64")
 
 /**
  * Create a brand new atproto account for this EVE character.
@@ -90,9 +90,9 @@ export const resetAndLogin = async (
   const resetRes = await fetch(
     `${deps.pdsUrl}/xrpc/com.atproto.admin.updateAccountPassword`,
     {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         Authorization: adminAuth(deps.adminPassword),
       },
       body: JSON.stringify({ did, password }),
@@ -100,7 +100,9 @@ export const resetAndLogin = async (
   )
   if (!resetRes.ok) {
     const text = await resetRes.text()
-    throw new Error(`updateAccountPassword failed (${resetRes.status}): ${text}`)
+    throw new Error(
+      `updateAccountPassword failed (${resetRes.status}): ${text}`,
+    )
   }
 
   const agent = new AtpAgent({ service: deps.pdsUrl })
@@ -118,7 +120,7 @@ export const resetAndLogin = async (
 
 // Parse SQLite datetime('now') strings ("YYYY-MM-DD HH:MM:SS") or ISO strings.
 const parseCreatedAt = (raw: string): Date =>
-  new Date(raw.includes('T') ? raw : raw.replace(' ', 'T') + 'Z')
+  new Date(raw.includes("T") ? raw : raw.replace(" ", "T") + "Z")
 
 const eveBirthDate = (createdAt: string): string => {
   const d = parseCreatedAt(createdAt)
@@ -143,20 +145,21 @@ const setEveProfile = async (
 
   const portraitRes = await fetch(
     `https://images.evetech.net/characters/${char.characterId}/portrait?size=512`,
-  );
-  if (!portraitRes.ok) throw new Error(`EVE portrait fetch failed: ${portraitRes.status}`)
+  )
+  if (!portraitRes.ok)
+    throw new Error(`EVE portrait fetch failed: ${portraitRes.status}`)
   const portrait = Buffer.from(await portraitRes.arrayBuffer())
 
   const blobRes = await agent.api.com.atproto.repo.uploadBlob(portrait, {
-    encoding: 'image/jpeg',
+    encoding: "image/jpeg",
   })
 
   await agent.api.com.atproto.repo.putRecord({
     repo: session.did,
-    collection: 'app.bsky.actor.profile',
-    rkey: 'self',
+    collection: "app.bsky.actor.profile",
+    rkey: "self",
     record: {
-      $type: 'app.bsky.actor.profile',
+      $type: "app.bsky.actor.profile",
       displayName: char.characterName,
       avatar: blobRes.data.blob,
       birthDate: eveBirthDate(createdAt),
@@ -210,19 +213,20 @@ export const provisionSession = async (
     if (existing.owner !== char.owner) {
       console.error(
         `observed ownership change on ${char.characterId} from ${existing.owner} to ${char.owner}`,
-      );
+      )
       throw new Error(
         "EVE character appears to have changed ownership. " +
           "Please contact an Edencom PDS support for manual review.",
-      );
+      )
     }
     persistEveTokens()
+    deps.characters.updateCharacterName(char.characterId, char.characterName)
     const session = await resetAndLogin(deps, existing.did)
     setEveProfile(deps.pdsUrl, session, char, existing.createdAt).catch(
       (err) => {
-        console.error(`setEveProfile failed for${char.characterId}`, err);
+        console.error(`setEveProfile failed for${char.characterId}`, err)
       },
-    );
+    )
     return session
   }
 
@@ -230,12 +234,12 @@ export const provisionSession = async (
   const primaryHandle = handleFor(
     deps.pdsServiceHandleDomains,
     char.characterName,
-  );
+  )
   console.log({
     primaryHandle,
     pdsHostname: deps.pdsHostname,
     characterName: char.characterName,
-  });
+  })
   let handle = primaryHandle
   let created
   try {
@@ -244,7 +248,7 @@ export const provisionSession = async (
     // On handle collision, fall back to disambiguated form.
     const msg = err instanceof Error ? err.message : String(err)
     if (/handle/i.test(msg) && /taken|unavailable|already/i.test(msg)) {
-      handle = handleForWithId(deps.pdsServiceHandleDomains, char);
+      handle = handleForWithId(deps.pdsServiceHandleDomains, char)
       created = await createAccount(deps, char, handle)
     } else {
       throw err
@@ -257,12 +261,12 @@ export const provisionSession = async (
     did: created.session.did,
     handle: created.session.handle,
     owner: char.owner,
-  });
+  })
   persistEveTokens()
 
   const createdAt = new Date().toISOString()
   setEveProfile(deps.pdsUrl, created.session, char, createdAt).catch((err) =>
-    console.error('setEveProfile failed for', char.characterId, err),
+    console.error("setEveProfile failed for", char.characterId, err),
   )
 
   return created.session

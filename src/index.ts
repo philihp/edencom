@@ -1,27 +1,27 @@
-import 'dotenv/config'
-import * as fs from 'node:fs'
-import * as https from 'node:https'
-import { once } from 'node:events'
-import { PDS, envToCfg, envToSecrets, readEnv } from '@atproto/pds'
-import { loadConfig } from './config.js'
-import { openCharacterStore } from './character-store.js'
-import { openTokenStore } from './token-store.js'
-import { openUserStore } from './user-store.js'
-import { createStateStore } from './state-store.js'
+import "dotenv/config"
+import * as fs from "node:fs"
+import * as https from "node:https"
+import { once } from "node:events"
+import { PDS, envToCfg, envToSecrets, readEnv } from "@atproto/pds"
+import { loadConfig } from "./config.js"
+import { openCharacterStore } from "./character-store.js"
+import { openTokenStore } from "./token-store.js"
+import { openUserStore } from "./user-store.js"
+import { createStateStore } from "./state-store.js"
 import {
   buildEveRouter,
   buildBlockerRouter,
   buildDebugRouter,
   RouterDeps,
-} from "./routes.js";
+} from "./routes.js"
 
 const main = async (): Promise<void> => {
   const appCfg = loadConfig()
   // Sync resolved port into PDS_PORT so @atproto/pds binds to the same port
   process.env.PDS_PORT = String(appCfg.port)
-  console.log(`${process.env.WEB_APP_URL}`);
+  console.log(`${process.env.WEB_APP_URL}`)
 
-  const dataDir = process.env.PDS_DATA_DIRECTORY ?? './data'
+  const dataDir = process.env.PDS_DATA_DIRECTORY ?? "./data"
   fs.mkdirSync(dataDir, { recursive: true })
 
   const pdsEnv = readEnv()
@@ -36,7 +36,7 @@ const main = async (): Promise<void> => {
 
   const pdsUrl = `http://127.0.0.1:${appCfg.port}`
   const adminPassword = process.env.PDS_ADMIN_PASSWORD
-  if (!adminPassword) throw new Error('PDS_ADMIN_PASSWORD required')
+  if (!adminPassword) throw new Error("PDS_ADMIN_PASSWORD required")
 
   pds.app.use(buildBlockerRouter())
   const routerDeps: RouterDeps = {
@@ -48,7 +48,7 @@ const main = async (): Promise<void> => {
     pdsUrl,
     pdsServiceHandleDomains: appCfg.serviceHandleDomains,
     adminPassword,
-  };
+  }
   pds.app.use(buildEveRouter(routerDeps))
   pds.app.use(buildDebugRouter(routerDeps))
 
@@ -76,24 +76,28 @@ const main = async (): Promise<void> => {
     }
     const httpsServer = https.createServer(tlsOptions, pds.app)
     httpsServer.listen(httpsPort)
-    await once(httpsServer, 'listening')
+    await once(httpsServer, "listening")
     console.log(`  HTTPS server listening on :${httpsPort}`)
-    console.log(`  Start SSO flow at: https://${appCfg.hostname}:${httpsPort}/eve/login`)
+    console.log(
+      `  Start SSO flow at: https://${appCfg.hostname}:${httpsPort}/eve/login`,
+    )
   } else {
-    console.log(`  Start SSO flow at: http://${appCfg.hostname}:${appCfg.port}/eve/login`)
+    console.log(
+      `  Start SSO flow at: http://${appCfg.hostname}:${appCfg.port}/eve/login`,
+    )
   }
   console.log(`  Demo ESI endpoint: GET /eve/me/ship (with atproto bearer)`)
 
   const shutdown = async (): Promise<void> => {
-    console.log('Shutting down...')
+    console.log("Shutting down...")
     characters.close()
     tokens.close()
     users.close()
     await pds.destroy()
     process.exit(0)
   }
-  process.on('SIGTERM', shutdown)
-  process.on('SIGINT', shutdown)
+  process.on("SIGTERM", shutdown)
+  process.on("SIGINT", shutdown)
 }
 
 main().catch((err) => {

@@ -1,4 +1,4 @@
-import * as R from 'ramda'
+import * as R from "ramda"
 
 export interface EveConfig {
   readonly clientId: string
@@ -9,15 +9,15 @@ export interface EveConfig {
 }
 
 export interface AppConfig {
-  readonly hostname: string;
-  readonly serviceHandleDomains: string;
-  readonly port: number;
-  readonly eve: EveConfig;
-  readonly tokenEncryptionKey: Buffer;
-  readonly supabaseUrl: string;
-  readonly supabaseAnonKey: string;
-  readonly supabaseSecretKey: string;
-  readonly webAppUrl: string;
+  readonly hostname: string
+  readonly serviceHandleDomains: string
+  readonly port: number
+  readonly eve: EveConfig
+  readonly tokenEncryptionKey: Buffer
+  readonly supabaseUrl: string
+  readonly supabaseAnonKey: string
+  readonly supabaseSecretKey: string
+  readonly webAppUrl: string
 }
 
 const required = (key: string): string => {
@@ -32,11 +32,11 @@ const splitScopes: (s: string) => ReadonlyArray<string> = R.pipe(
 )
 
 const parseEncryptionKey = (b64: string): Buffer => {
-  const buf = Buffer.from(b64, 'base64')
+  const buf = Buffer.from(b64, "base64")
   if (buf.length !== 32) {
     throw new Error(
-      'EVE_TOKEN_ENCRYPTION_KEY must be 32 bytes base64 ' +
-        '(generate with: openssl rand -base64 32)',
+      "EVE_TOKEN_ENCRYPTION_KEY must be 32 bytes base64 " +
+        "(generate with: openssl rand -base64 32)",
     )
   }
   return buf
@@ -59,4 +59,4 @@ export const loadConfig = (): AppConfig => ({
   supabaseAnonKey: required("SUPABASE_ANON_KEY"),
   supabaseSecretKey: required("SUPABASE_SECRET_KEY"),
   webAppUrl: required("WEB_APP_URL"),
-});
+})

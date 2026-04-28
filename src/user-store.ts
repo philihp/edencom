@@ -1,6 +1,6 @@
-import Database from 'better-sqlite3'
-import * as path from 'node:path'
-import * as fs from 'node:fs'
+import Database from "better-sqlite3"
+import * as path from "node:path"
+import * as fs from "node:fs"
 
 export interface UserCharacterBinding {
   readonly supabaseUserId: string
@@ -10,7 +10,9 @@ export interface UserCharacterBinding {
 
 export interface UserStore {
   readonly findByUserId: (userId: string) => UserCharacterBinding | null
-  readonly findByCharacterId: (characterId: number) => UserCharacterBinding | null
+  readonly findByCharacterId: (
+    characterId: number,
+  ) => UserCharacterBinding | null
   readonly listAll: () => UserCharacterBinding[]
   readonly bind: (userId: string, characterId: number) => void
   readonly close: () => void
@@ -18,8 +20,8 @@ export interface UserStore {
 
 export const openUserStore = (dataDir: string): UserStore => {
   fs.mkdirSync(dataDir, { recursive: true })
-  const db = new Database(path.join(dataDir, 'users.sqlite'))
-  db.pragma('journal_mode = WAL')
+  const db = new Database(path.join(dataDir, "users.sqlite"))
+  db.pragma("journal_mode = WAL")
   db.exec(`
     CREATE TABLE IF NOT EXISTS user_character_binding (
       supabase_user_id TEXT PRIMARY KEY,
@@ -49,7 +51,9 @@ export const openUserStore = (dataDir: string): UserStore => {
     findByUserId: (userId) =>
       (findByUserStmt.get(userId) as UserCharacterBinding | undefined) ?? null,
     findByCharacterId: (characterId) =>
-      (findByCharacterStmt.get(characterId) as UserCharacterBinding | undefined) ?? null,
+      (findByCharacterStmt.get(characterId) as
+        | UserCharacterBinding
+        | undefined) ?? null,
     listAll: () => listAllStmt.all() as UserCharacterBinding[],
     bind: (userId, characterId) => {
       bindStmt.run(userId, characterId)

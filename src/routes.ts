@@ -1,39 +1,53 @@
-import * as crypto from 'node:crypto'
-import express, { type Router, type Request, type Response, type NextFunction } from 'express'
-import type { AppConfig } from './config.js'
-import type { StateStore } from './state-store.js'
-import type { CharacterStore } from './character-store.js'
-import type { TokenStore } from './token-store.js'
-import type { UserStore } from './user-store.js'
+import * as crypto from "node:crypto"
+import express, {
+  type Router,
+  type Request,
+  type Response,
+  type NextFunction,
+} from "express"
+import type { AppConfig } from "./config.js"
+import type { StateStore } from "./state-store.js"
+import type { CharacterStore } from "./character-store.js"
+import type { TokenStore } from "./token-store.js"
+import type { UserStore } from "./user-store.js"
 import {
   buildAuthorizeUrl,
   codeChallengeFor,
   exchangeCodeForToken,
   generateCodeVerifier,
   verifyAccessToken,
-} from './eve-sso.js'
-import { provisionSession, resetAndLogin, updateHandleForDid, type ProvisionDeps, type AdminDeps } from './provision.js'
+} from "./eve-sso.js"
+import {
+  provisionSession,
+  resetAndLogin,
+  updateHandleForDid,
+  type ProvisionDeps,
+  type AdminDeps,
+} from "./provision.js"
 import {
   getCharacterShip,
   EsiError,
   EsiRateLimitedError,
   TokensInvalidatedError,
-} from './esi-client.js'
-import { extractSupabaseUser, getSupabaseUserEmail, validateSupabasePassword } from './supabase-auth.js'
+} from "./esi-client.js"
+import {
+  extractSupabaseUser,
+  getSupabaseUserEmail,
+  validateSupabasePassword,
+} from "./supabase-auth.js"
 
 export interface RouterDeps {
-  readonly config: AppConfig;
-  readonly stateStore: StateStore;
-  readonly characters: CharacterStore;
-  readonly tokens: TokenStore;
-  readonly users: UserStore;
-  readonly pdsUrl: string;
-  readonly pdsServiceHandleDomains: string;
-  readonly adminPassword: string;
+  readonly config: AppConfig
+  readonly stateStore: StateStore
+  readonly characters: CharacterStore
+  readonly tokens: TokenStore
+  readonly users: UserStore
+  readonly pdsUrl: string
+  readonly pdsServiceHandleDomains: string
+  readonly adminPassword: string
 }
 
-const randomState = (): string =>
-  crypto.randomBytes(16).toString('base64url')
+const randomState = (): string => crypto.randomBytes(16).toString("base64url")
 
 // --- GET /eve/login --------------------------------------------------------
 // Browser-accessible entry point: redirects directly to EVE SSO.
@@ -45,7 +59,10 @@ const handleLogin =
     const verifier = generateCodeVerifier()
     const challenge = codeChallengeFor(verifier)
     deps.stateStore.put(state, verifier, null)
-    const url = buildAuthorizeUrl(deps.config.eve, { state, codeChallenge: challenge })
+    const url = buildAuthorizeUrl(deps.config.eve, {
+      state,
+      codeChallenge: challenge,
+    })
     res.redirect(url)
   }
 
@@ -62,7 +79,7 @@ const handleStartBinding =
       deps.config.supabaseSecretKey,
     )
     if (!userId) {
-      res.status(401).json({ error: 'Missing or invalid authorization' })
+      res.status(401).json({ error: "Missing or invalid authorization" })
       return
     }
 
@@ -95,14 +112,17 @@ const handleStartHandleChange =
       deps.config.supabaseSecretKey,
     )
     if (!userId) {
-      res.status(401).json({ error: 'Missing or invalid authorization' })
+      res.status(401).json({ error: "Missing or invalid authorization" })
       return
     }
 
     const body = req.body as StartHandleChangeBody
-    const newHandle = typeof body.handle === 'string' ? body.handle.trim() : null
+    const newHandle =
+      typeof body.handle === "string" ? body.handle.trim() : null
     if (!newHandle) {
-      res.status(400).json({ error: 'InvalidRequest', message: 'handle is required' })
+      res
+        .status(400)
+        .json({ error: "InvalidRequest", message: "handle is required" })
       return
     }
 
@@ -110,7 +130,13 @@ const handleStartHandleChange =
     // sense for existing accounts.
     const binding = deps.users.findByUserId(userId)
     if (!binding) {
-      res.status(400).json({ error: 'NotBound', message: 'No EVE character bound to this account. Complete onboarding first.' })
+      res
+        .status(400)
+        .json({
+          error: "NotBound",
+          message:
+            "No EVE character bound to this account. Complete onboarding first.",
+        })
       return
     }
 
@@ -118,7 +144,10 @@ const handleStartHandleChange =
     const verifier = generateCodeVerifier()
     const challenge = codeChallengeFor(verifier)
     deps.stateStore.put(state, verifier, userId, newHandle)
-    const url = buildAuthorizeUrl(deps.config.eve, { state, codeChallenge: challenge })
+    const url = buildAuthorizeUrl(deps.config.eve, {
+      state,
+      codeChallenge: challenge,
+    })
     res.json({ url })
   }
 
@@ -129,27 +158,30 @@ const handleCallback =
   async (req: Request, res: Response): Promise<void> => {
     const webAppUrl = deps.config.webAppUrl
 
-    const code = typeof req.query.code === 'string' ? req.query.code : null
-    const state = typeof req.query.state === 'string' ? req.query.state : null
+    const code = typeof req.query.code === "string" ? req.query.code : null
+    const state = typeof req.query.state === "string" ? req.query.state : null
     const errParam =
-      typeof req.query.error === 'string' ? req.query.error : null
+      typeof req.query.error === "string" ? req.query.error : null
 
     if (errParam) {
-      const dest = new URL('/dashboard', webAppUrl)
-      dest.searchParams.set('eve_error', `EVE SSO error: ${errParam}`)
+      const dest = new URL("/dashboard", webAppUrl)
+      dest.searchParams.set("eve_error", `EVE SSO error: ${errParam}`)
       res.redirect(dest.toString())
       return
     }
     if (!code || !state) {
-      const dest = new URL('/dashboard', webAppUrl)
-      dest.searchParams.set('eve_error', 'Missing code or state')
+      const dest = new URL("/dashboard", webAppUrl)
+      dest.searchParams.set("eve_error", "Missing code or state")
       res.redirect(dest.toString())
       return
     }
     const rec = deps.stateStore.take(state)
     if (!rec) {
-      const dest = new URL('/dashboard', webAppUrl)
-      dest.searchParams.set('eve_error', 'Invalid or expired state — please try again')
+      const dest = new URL("/dashboard", webAppUrl)
+      dest.searchParams.set(
+        "eve_error",
+        "Invalid or expired state — please try again",
+      )
       res.redirect(dest.toString())
       return
     }
@@ -165,50 +197,59 @@ const handleCallback =
         tokens.access_token,
       )
 
-      const adminDeps: AdminDeps = { pdsUrl: deps.pdsUrl, adminPassword: deps.adminPassword }
+      const adminDeps: AdminDeps = {
+        pdsUrl: deps.pdsUrl,
+        adminPassword: deps.adminPassword,
+      }
 
       if (rec.newHandle) {
         // Handle-change flow: confirm the user still owns this character, then
         // update the ATProto handle. We require the character to already exist.
-        const existing = deps.characters.findByCharacterId(character.characterId)
+        const existing = deps.characters.findByCharacterId(
+          character.characterId,
+        )
         if (!existing) {
-          throw new Error('No existing account found for this EVE character. Complete onboarding first.')
+          throw new Error(
+            "No existing account found for this EVE character. Complete onboarding first.",
+          )
         }
         if (existing.owner !== character.owner) {
-          throw new Error('EVE character appears to have changed ownership. Handle change denied.')
+          throw new Error(
+            "EVE character appears to have changed ownership. Handle change denied.",
+          )
         }
 
         await updateHandleForDid(adminDeps, existing.did, rec.newHandle)
         deps.characters.updateHandle(character.characterId, rec.newHandle)
 
-        const dest = new URL('/dashboard', webAppUrl)
-        dest.searchParams.set('handle_changed', 'true')
+        const dest = new URL("/dashboard", webAppUrl)
+        dest.searchParams.set("handle_changed", "true")
         res.redirect(dest.toString())
-        return
+      } else {
+        // not rec.newHandle
+        const provisionDeps: ProvisionDeps = {
+          pdsUrl: deps.pdsUrl,
+          pdsServiceHandleDomains: deps.pdsServiceHandleDomains,
+          pdsHostname: deps.config.hostname,
+          adminPassword: deps.adminPassword,
+          characters: deps.characters,
+          tokens: deps.tokens,
+          eveCfg: deps.config.eve,
+        }
+        await provisionSession(provisionDeps, character, tokens)
+
+        if (rec.supabaseUserId) {
+          deps.users.bind(rec.supabaseUserId, character.characterId)
+        }
+
+        const dest = new URL("/dashboard", webAppUrl)
+        dest.searchParams.set("eve_bound", "true")
+        res.redirect(dest.toString())
       }
-
-      const provisionDeps: ProvisionDeps = {
-        pdsUrl: deps.pdsUrl,
-        pdsServiceHandleDomains: deps.pdsServiceHandleDomains,
-        pdsHostname: deps.config.hostname,
-        adminPassword: deps.adminPassword,
-        characters: deps.characters,
-        tokens: deps.tokens,
-        eveCfg: deps.config.eve,
-      };
-      await provisionSession(provisionDeps, character, tokens)
-
-      if (rec.supabaseUserId) {
-        deps.users.bind(rec.supabaseUserId, character.characterId)
-      }
-
-      const dest = new URL('/dashboard', webAppUrl)
-      dest.searchParams.set('eve_bound', 'true')
-      res.redirect(dest.toString())
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      const dest = new URL('/dashboard', webAppUrl)
-      dest.searchParams.set('eve_error', msg)
+      const dest = new URL("/dashboard", webAppUrl)
+      dest.searchParams.set("eve_error", msg)
       res.redirect(dest.toString())
     }
   }
@@ -225,7 +266,7 @@ const handleGetAccount =
       deps.config.supabaseSecretKey,
     )
     if (!userId) {
-      res.status(401).json({ error: 'Missing or invalid authorization' })
+      res.status(401).json({ error: "Missing or invalid authorization" })
       return
     }
 
@@ -247,7 +288,7 @@ const handleGetAccount =
       characterName: character.characterName,
       handle: character.handle,
       did: character.did,
-    });
+    })
   }
 
 // --- GET /eve/me/ship (demo ESI call) -----------------------------------------
@@ -257,13 +298,13 @@ interface AtpAccessPayload {
 }
 
 const parseAtpJwt = (authz: string | undefined): AtpAccessPayload | null => {
-  if (!authz || !authz.startsWith('Bearer ')) return null
-  const token = authz.slice('Bearer '.length)
-  const parts = token.split('.')
+  if (!authz || !authz.startsWith("Bearer ")) return null
+  const token = authz.slice("Bearer ".length)
+  const parts = token.split(".")
   if (parts.length !== 3) return null
   try {
     const payload = JSON.parse(
-      Buffer.from(parts[1]!, 'base64url').toString('utf8'),
+      Buffer.from(parts[1]!, "base64url").toString("utf8"),
     ) as AtpAccessPayload
     return payload
   } catch {
@@ -277,13 +318,13 @@ const handleMyShip =
     const payload = parseAtpJwt(req.headers.authorization)
     const did = payload?.sub
     if (!did) {
-      res.status(401).json({ error: 'missing or malformed bearer token' })
+      res.status(401).json({ error: "missing or malformed bearer token" })
       return
     }
 
     const mapping = deps.characters.findByDid(did)
     if (!mapping) {
-      res.status(404).json({ error: 'no EVE character mapped to this DID' })
+      res.status(404).json({ error: "no EVE character mapped to this DID" })
       return
     }
 
@@ -302,34 +343,34 @@ const handleMyShip =
     } catch (err) {
       if (err instanceof TokensInvalidatedError) {
         res.status(401).json({
-          error: 'eve_tokens_invalid',
+          error: "eve_tokens_invalid",
           message:
-            'Your EVE authorization has expired or been revoked. ' +
-            'Please re-authenticate via the website.',
+            "Your EVE authorization has expired or been revoked. " +
+            "Please re-authenticate via the website.",
         })
         return
       }
       if (err instanceof EsiRateLimitedError) {
         res.status(503).json({
-          error: 'esi_rate_limited',
+          error: "esi_rate_limited",
           retryAfterMs: err.retryAfterMs,
         })
         return
       }
       if (err instanceof EsiError) {
         res.status(err.status).json({
-          error: 'esi_error',
+          error: "esi_error",
           message: err.message,
           hint:
             err.status === 403
-              ? 'This endpoint needs the esi-location.read_ship_type.v1 scope. ' +
-                'Add it to EVE_SCOPES and re-authenticate.'
+              ? "This endpoint needs the esi-location.read_ship_type.v1 scope. " +
+                "Add it to EVE_SCOPES and re-authenticate."
               : undefined,
         })
         return
       }
       const msg = err instanceof Error ? err.message : String(err)
-      res.status(500).json({ error: 'internal', message: msg })
+      res.status(500).json({ error: "internal", message: msg })
     }
   }
 
@@ -350,36 +391,54 @@ const handleCreateSession =
     // Internal calls (e.g. from resetAndLogin) carry a freshly-generated random
     // password that Supabase knows nothing about. Pass them straight through to
     // the underlying PDS handler which validates against its own password store.
-    const ip = req.ip ?? req.socket.remoteAddress ?? ''
-    const isLoopback = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1'
+    const ip = req.ip ?? req.socket.remoteAddress ?? ""
+    const isLoopback =
+      ip === "127.0.0.1" || ip === "::1" || ip === "::ffff:127.0.0.1"
     if (isLoopback) {
       next()
       return
     }
 
     const body = req.body as CreateSessionBody
-    const identifier = typeof body.identifier === 'string' ? body.identifier : null
-    const password = typeof body.password === 'string' ? body.password : null
+    const identifier =
+      typeof body.identifier === "string" ? body.identifier : null
+    const password = typeof body.password === "string" ? body.password : null
 
     if (!identifier || !password) {
-      res.status(400).json({ error: 'InvalidRequest', message: 'identifier and password are required' })
+      res
+        .status(400)
+        .json({
+          error: "InvalidRequest",
+          message: "identifier and password are required",
+        })
       return
     }
 
     // Resolve identifier (handle or DID) to a character mapping.
-    const character = identifier.startsWith('did:')
+    const character = identifier.startsWith("did:")
       ? deps.characters.findByDid(identifier)
       : deps.characters.findByHandle(identifier)
 
     if (!character) {
-      res.status(401).json({ error: 'AuthenticationRequired', message: 'Account not found or not bound to an EVE character' })
+      res
+        .status(401)
+        .json({
+          error: "AuthenticationRequired",
+          message: "Account not found or not bound to an EVE character",
+        })
       return
     }
 
     // Find the Supabase user bound to this character.
     const binding = deps.users.findByCharacterId(character.characterId)
     if (!binding) {
-      res.status(401).json({ error: 'AuthenticationRequired', message: 'No Supabase account bound to this character. Please log in via the website first.' })
+      res
+        .status(401)
+        .json({
+          error: "AuthenticationRequired",
+          message:
+            "No Supabase account bound to this character. Please log in via the website first.",
+        })
       return
     }
 
@@ -388,12 +447,12 @@ const handleCreateSession =
       binding.supabaseUserId,
       deps.config.supabaseUrl,
       deps.config.supabaseSecretKey,
-    );
+    )
     if (!email) {
       res.status(500).json({
         error: "InternalError",
         message: `Could not retrieve account email for ${binding.supabaseUserId}`,
-      });
+      })
       return
     }
 
@@ -402,21 +461,26 @@ const handleCreateSession =
       password,
       deps.config.supabaseUrl,
       deps.config.supabaseAnonKey,
-    );
+    )
     console.log(`[createSession] password valid=${valid}`)
     if (!valid) {
-      res.status(401).json({ error: 'AuthenticationRequired', message: 'Invalid password' })
+      res
+        .status(401)
+        .json({ error: "AuthenticationRequired", message: "Invalid password" })
       return
     }
 
     // Credentials check out — mint a fresh ATProto session via the admin reset trick.
-    const adminDeps: AdminDeps = { pdsUrl: deps.pdsUrl, adminPassword: deps.adminPassword }
+    const adminDeps: AdminDeps = {
+      pdsUrl: deps.pdsUrl,
+      adminPassword: deps.adminPassword,
+    }
     try {
       const session = await resetAndLogin(adminDeps, character.did)
       res.json(session)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      res.status(500).json({ error: 'InternalError', message: msg })
+      res.status(500).json({ error: "InternalError", message: msg })
     }
   }
 
@@ -425,13 +489,14 @@ const handleCreateSession =
 const blockExternal =
   (message: string) =>
   (req: Request, res: Response, next: NextFunction): void => {
-    const ip = req.ip ?? req.socket.remoteAddress ?? ''
-    const isLoopback = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1'
+    const ip = req.ip ?? req.socket.remoteAddress ?? ""
+    const isLoopback =
+      ip === "127.0.0.1" || ip === "::1" || ip === "::ffff:127.0.0.1"
     if (isLoopback) {
       next()
       return
     }
-    res.status(403).json({ error: 'AuthMethodNotSupported', message })
+    res.status(403).json({ error: "AuthMethodNotSupported", message })
   }
 
 // --- GET /.well-known/atproto-did -------------------------------------------
@@ -448,36 +513,44 @@ const handleAtprotoWellKnown =
       next()
       return
     }
-    res.type('text/plain').send(character.did)
+    res.type("text/plain").send(character.did)
   }
 
 export const buildEveRouter = (deps: RouterDeps): Router => {
   const router = express.Router()
-  router.get('/.well-known/atproto-did', handleAtprotoWellKnown(deps))
-  router.get('/eve/login', handleLogin(deps))
-  router.post('/eve/start-binding', express.json(), handleStartBinding(deps))
-  router.post('/eve/start-handle-change', express.json(), handleStartHandleChange(deps))
-  router.get('/eve/callback', handleCallback(deps))
-  router.get('/eve/me/ship', handleMyShip(deps))
-  router.get('/api/account', handleGetAccount(deps))
-  router.post('/xrpc/com.atproto.server.createSession', express.json(), handleCreateSession(deps))
+  router.get("/.well-known/atproto-did", handleAtprotoWellKnown(deps))
+  router.get("/eve/login", handleLogin(deps))
+  router.post("/eve/start-binding", express.json(), handleStartBinding(deps))
+  router.post(
+    "/eve/start-handle-change",
+    express.json(),
+    handleStartHandleChange(deps),
+  )
+  router.get("/eve/callback", handleCallback(deps))
+  router.get("/eve/me/ship", handleMyShip(deps))
+  router.get("/api/account", handleGetAccount(deps))
+  router.post(
+    "/xrpc/com.atproto.server.createSession",
+    express.json(),
+    handleCreateSession(deps),
+  )
   return router
 }
 
 export const buildBlockerRouter = (): Router => {
   const router = express.Router()
   router.post(
-    '/xrpc/com.atproto.server.createAccount',
+    "/xrpc/com.atproto.server.createAccount",
     blockExternal(
-      'This PDS uses EVE Online SSO exclusively. ' +
-      'Please sign up at the website and bind your EVE character there.',
+      "This PDS uses EVE Online SSO exclusively. " +
+        "Please sign up at the website and bind your EVE character there.",
     ),
   )
   router.post(
-    '/xrpc/com.atproto.identity.updateHandle',
+    "/xrpc/com.atproto.identity.updateHandle",
     blockExternal(
-      'Handle changes must be done through the website. ' +
-      'Visit the dashboard and use the "Change Username" flow to re-authenticate via EVE Online SSO.',
+      "Handle changes must be done through the website. " +
+        'Visit the dashboard and use the "Change Username" flow to re-authenticate via EVE Online SSO.',
     ),
   )
   return router
@@ -488,7 +561,7 @@ export const buildBlockerRouter = (): Router => {
 export const buildDebugRouter = (deps: RouterDeps): Router => {
   const router = express.Router()
 
-  router.get('/debug/stores', (_req, res) => {
+  router.get("/debug/stores", (_req, res) => {
     const characters = deps.characters.listAll()
     const users = deps.users.listAll()
     const tokens = deps.tokens.listAllMeta()

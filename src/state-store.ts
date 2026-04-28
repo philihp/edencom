@@ -1,10 +1,10 @@
-import * as R from 'ramda'
+import * as R from "ramda"
 
 export interface OAuthStateRecord {
-  readonly codeVerifier: string;
-  readonly supabaseUserId: string | null;
-  readonly newHandle: string | null;
-  readonly createdAt: number;
+  readonly codeVerifier: string
+  readonly supabaseUserId: string | null
+  readonly newHandle: string | null
+  readonly createdAt: number
 }
 
 const TTL_MS = 10 * 60 * 1000 // 10 minutes
@@ -15,13 +15,15 @@ export interface StateStore {
     codeVerifier: string,
     supabaseUserId: string | null,
     newHandle?: string | null,
-  ) => void;
-  readonly take: (state: string) => OAuthStateRecord | null;
-  readonly size: () => number;
+  ) => void
+  readonly take: (state: string) => OAuthStateRecord | null
+  readonly size: () => number
 }
 
-const isExpired = (now: number) => (r: OAuthStateRecord): boolean =>
-  now - r.createdAt > TTL_MS
+const isExpired =
+  (now: number) =>
+  (r: OAuthStateRecord): boolean =>
+    now - r.createdAt > TTL_MS
 
 export const createStateStore = (): StateStore => {
   const store = new Map<string, OAuthStateRecord>()
@@ -38,21 +40,21 @@ export const createStateStore = (): StateStore => {
 
   return {
     put: (state, codeVerifier, supabaseUserId, newHandle = null) => {
-      prune();
+      prune()
       store.set(state, {
         codeVerifier,
         supabaseUserId,
         newHandle,
         createdAt: Date.now(),
-      });
+      })
     },
     take: (state) => {
-      prune();
-      const rec = store.get(state);
-      if (!rec) return null;
-      store.delete(state);
-      return rec;
+      prune()
+      const rec = store.get(state)
+      if (!rec) return null
+      store.delete(state)
+      return rec
     },
     size: () => store.size,
-  };
+  }
 }
