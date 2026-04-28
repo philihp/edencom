@@ -5,6 +5,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { slugifyCharacterName } from '@edencom/character-slug'
 
+const serviceHandleDomains = process.env.PDS_SERVICE_HANDLE_DOMAINS?.replace(/^\./, '')
+
 export const startEveBinding = async () => {
   const supabase = await createClient()
   const {
@@ -86,7 +88,7 @@ export const completeAccount = async (formData: FormData) => {
     redirect('/dashboard?account_error=Link+your+EVE+character+first')
   }
 
-  const email = `${slugifyCharacterName(account.characterName)}@edencom.link`
+  const email = `${slugifyCharacterName(account.characterName)}@${serviceHandleDomains}`
 
   const admin = createAdminClient()
   const { data: existingUser } = await admin
@@ -95,6 +97,8 @@ export const completeAccount = async (formData: FormData) => {
     .select('id')
     .eq('email', email)
     .single()
+
+  console.log({ existingUser })
 
   if (existingUser) {
     const { error } = await admin.auth.admin.updateUserById(existingUser.id, { password })
