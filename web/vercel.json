@@ -1,0 +1,3 @@
+{
+  "buildCommand": "cd .. && pnpm --filter @edencom/character-slug build && cd web && next build"
+}
