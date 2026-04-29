@@ -87,17 +87,15 @@ export const finishBinding = async (formData: FormData) => {
   const email = `${handle}@${serviceHandleDomains}`
 
   const admin = createAdminClient()
-  const { data: existingUser } = await admin
-    .schema('auth')
-    .from('users')
-    .select('id')
-    .eq('email', email)
-    .single()
+  const { data: existingUser, ...adminRes } = await admin.rpc('get_user_id_by_email', {
+    user_email: email,
+  })
 
-  console.log({ email, existingUser })
+  console.log({ email, data: existingUser, ...adminRes })
 
   if (existingUser) {
-    const { error } = await admin.auth.admin.updateUserById(existingUser.id, { password })
+    const { error } = await admin.auth.admin.updateUserById(existingUser, { password })
+    console.error(error)
     if (error) {
       redirect(`/?account_error=${encodeURIComponent(error.message)}`)
     }

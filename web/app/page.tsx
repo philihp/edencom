@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { startBinding, cancelBinding, finishBinding } from './actions'
 
 interface AccountData {
@@ -31,15 +31,8 @@ const fetchAccount = async (accessToken: string): Promise<AccountData> => {
 export default async function LandingPage({
   searchParams,
 }: {
-  searchParams: Promise<{
-    eve_bound?: string
-    eve_error?: string
-    account_created?: string
-    account_error?: string
-  }>
+  searchParams: Promise<{ eve_bound?: string }>
 }) {
-   const params = await searchParams
-
   const supabase = await createClient()
   const {
     data: { user },
@@ -52,6 +45,17 @@ export default async function LandingPage({
   if (!pdsUrl) throw new Error('PDS_API_URL not configured')
 
   const account = session && (await fetchAccount(session.access_token))
+
+  const { eve_bound: eveHandle } = await searchParams
+  let passwordPreviouslySet = false
+  if (eveHandle) {
+    const email = eveHandle.replace('.', '@')
+    const admin = createAdminClient()
+    const { data: existingUserId } = await admin.rpc('get_user_id_by_email', {
+      user_email: email,
+    })
+    passwordPreviouslySet = !!existingUserId
+  }
 
   return (
     <main>
@@ -72,44 +76,40 @@ export default async function LandingPage({
       {user && user.is_anonymous && (
         <>
           <fieldset>
-            <legend>Success</legend>The following username has been reserved. Set a
-            password to claim it.
+            <legend>Link</legend>
+            <Image
+              src={`https://images.evetech.net/characters/${account.characterId}/portrait?size=128`}
+              alt={account?.handle ?? 'Character portrait'}
+              width={128}
+              height={128}
+            />
+            <dl>
+              <dt>Hosting Provider</dt>
+              <dd>
+                <code>{pdsUrl}</code>
+              </dd>
+              <dt>Handle</dt>
+              <dd>
+                <var>{account?.handle}</var>
+              </dd>
+              <dt>Password</dt>
+              <dd>
+                <form action={finishBinding}>
+                  <label htmlFor="password">
+                    <input
+                      id="password"
+                      name="password"
+                      type="password"
+                      required
+                      autoComplete="new-password"
+                      minLength={8}
+                    />
+                  </label>{' '}
+                  <button type="submit">Set</button>
+                </form>
+              </dd>
+            </dl>
           </fieldset>
-          <dl>
-            <var>
-              <Image
-                src={`https://images.evetech.net/characters/${account.characterId}/portrait?size=128`}
-                alt={account?.handle ?? 'Character portrait'}
-                width={128}
-                height={128}
-              />
-            </var>
-            <dt>Host</dt>
-            <dd>
-              <code>{pdsUrl}</code>
-            </dd>
-            <dt>Handle</dt>
-            <dd>
-              <var>{account?.handle}</var>
-            </dd>
-          </dl>
-          <form action={finishBinding}>
-            <p>
-              <label htmlFor="password">
-                Password
-                <br />
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  autoComplete="new-password"
-                  minLength={8}
-                />
-              </label>
-            </p>
-            <button type="submit">Set a password</button>
-          </form>
           <p></p>
         </>
       )}
@@ -142,7 +142,7 @@ export default async function LandingPage({
               </var>
             </dd>
           </dl>
-          You can now login to BlueSky or any ATProto client with this handle.
+          <p>You can now login to BlueSky or any ATProto client with this handle.</p>
         </>
       )}
 

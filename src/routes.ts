@@ -243,7 +243,7 @@ const handleCallback =
         }
 
         const dest = new URL("/", webAppUrl)
-        dest.searchParams.set("eve_bound", session.handle)
+        // dest.searchParams.set("eve_bound", session.handle)
         res.redirect(dest.toString())
       }
     } catch (err) {
