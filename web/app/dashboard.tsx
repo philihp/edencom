@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { startEveBinding, signOut, completeAccount } from './actions'
-import { startAnonymousBinding } from '../actions'
+import { startAnonymousBinding } from './actions'
 
 interface AccountData {
   bound: boolean
@@ -52,7 +52,7 @@ export default async function DashboardPage({
 
   const account = session ? await fetchAccount(session.access_token) : { bound: false }
   const params = await searchParams
-  const justBound = params.eve_bound === 'true'
+  const justBound = !!params.eve_bound
   const bindingError = params.eve_error
   const accountCreated = params.account_created === 'true'
   const accountError = params.account_error
@@ -111,6 +111,17 @@ export default async function DashboardPage({
           </dd>
         </dl>
 
+        <pre>
+          {JSON.stringify(
+            {
+              isAnonymous,
+              account,
+            },
+            undefined,
+            2,
+          )}
+        </pre>
+
         <p>
           Choose a password to finish creating your account. You&apos;ll use it to sign in
           on Bluesky and other AT Protocol clients.
@@ -168,7 +179,7 @@ export default async function DashboardPage({
       )}
       {justBound && (
         <fieldset>
-          <legend>Success</legend>EVE character successfully linked to your account.
+          <legend>Success</legend>EVE character connected.
         </fieldset>
       )}
       {bindingError && (

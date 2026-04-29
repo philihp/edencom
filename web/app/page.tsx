@@ -1,38 +1,134 @@
+import Image from 'next/image'
 import Link from 'next/link'
-import { startAnonymousBinding } from './actions'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import { startBinding, cancelBinding, finishBinding } from './actions'
 
-export default function LandingPage() {
+interface AccountData {
+  bound: boolean
+  characterId?: number
+  handle?: string
+  did?: string
+}
+
+const fetchAccount = async (accessToken: string): Promise<AccountData> => {
+  const pdsUrl = process.env.PDS_API_URL
+  if (!pdsUrl) return { bound: false }
+
+  try {
+    const res = await fetch(`${pdsUrl}/api/account`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: 'no-store',
+    })
+    if (!res.ok) return { bound: false }
+    return res.json() as Promise<AccountData>
+  } catch (err) {
+    console.error('fetchAccount failed:', err)
+    return { bound: false }
+  }
+}
+
+export default async function LandingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    eve_bound?: string
+    eve_error?: string
+    account_created?: string
+    account_error?: string
+  }>
+}) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  const pdsUrl = process.env.PDS_API_URL
+  if (!pdsUrl) throw new Error('PDS_API_URL not configured')
+
+  const account = session && (await fetchAccount(session.access_token))
+
   return (
     <main>
       <h1>Edencom Social</h1>
-      <p>
-        AT Protocol capsuleer identity registery. The identities of New Eden citizens have
-        been validated by the edencom.link PDS.
-      </p>
 
-      <ol>
-        <li>
-          <strong>Step through the gate</strong> &mdash; Connect through EVE Online to
-          bring your capsuleer across into the real world. Your handle is forged from your
-          character&apos;s name.
-        </li>
-        <li>
-          <strong>Claim your account</strong> &mdash; Once your character is linked,
-          choose a password to claim your account.
-        </li>
-        <li>
-          <strong>Sign in</strong> &mdash; Connect to the Edencom PDS on{' '}
-          <Link href="https://bsky.app/">Bluesky</Link> or any{' '}
-          <Link href="https://techcrunch.com/2025/06/13/beyond-bluesky-these-are-the-apps-building-social-experiences-on-the-at-protocol/">
-            AT Protocol client
-          </Link>
-          .
-        </li>
-      </ol>
+      {!user && (
+        <>
+          <p>
+            AT Protocol capsuleer identity registery. The identities of New Eden citizens
+            have been validated by the edencom.link PDS.
+          </p>
+          <form action={startBinding}>
+            <button type="submit">Link to EVE Online</button>
+          </form>
+        </>
+      )}
+      {user && (
+        <>
+          <fieldset>
+            <legend>Success</legend>The following reservation has been created, but will
+            remain unclaimed until a password is set.
+          </fieldset>
+          <dl>
+            <var>
+              <Image
+                src={`https://images.evetech.net/characters/${account.characterId}/portrait?size=128`}
+                alt={account?.handle ?? 'Character portrait'}
+                width={128}
+                height={128}
+              />
+            </var>
+            <dt>Handle</dt>
+            <dd>
+              <var>{account?.handle}</var>
+            </dd>
+            <dt>DID</dt>
+            <dd>
+              <code>{account?.did}</code>
+            </dd>
+          </dl>
+          <form action={finishBinding}>
+            <p>
+              <label htmlFor="password">
+                Password
+                <br />
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  autoComplete="new-password"
+                  minLength={8}
+                />
+              </label>
+            </p>
+            <p>
+              <label htmlFor="confirm">
+                Confirm Password
+                <br />
+                <input
+                  id="confirm"
+                  name="confirm"
+                  type="password"
+                  required
+                  autoComplete="new-password"
+                  minLength={8}
+                />
+              </label>
+            </p>
+            <button type="submit">Set a password</button>
+          </form>
+          <p></p>
+          <form action={cancelBinding}>
+            <button type="submit">Cancel</button>
+          </form>
+        </>
+      )}
 
-      <form action={startAnonymousBinding}>
-        <button type="submit">Connect through EVE Online</button>
-      </form>
+      <pre>{JSON.stringify({ user, session, account }, undefined, 2)}</pre>
     </main>
   )
 }

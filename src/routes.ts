@@ -164,20 +164,20 @@ const handleCallback =
       typeof req.query.error === "string" ? req.query.error : null
 
     if (errParam) {
-      const dest = new URL("/dashboard", webAppUrl)
+      const dest = new URL("/", webAppUrl)
       dest.searchParams.set("eve_error", `EVE SSO error: ${errParam}`)
       res.redirect(dest.toString())
       return
     }
     if (!code || !state) {
-      const dest = new URL("/dashboard", webAppUrl)
+      const dest = new URL("/", webAppUrl)
       dest.searchParams.set("eve_error", "Missing code or state")
       res.redirect(dest.toString())
       return
     }
     const rec = deps.stateStore.take(state)
     if (!rec) {
-      const dest = new URL("/dashboard", webAppUrl)
+      const dest = new URL("/", webAppUrl)
       dest.searchParams.set(
         "eve_error",
         "Invalid or expired state — please try again",
@@ -222,7 +222,7 @@ const handleCallback =
         await updateHandleForDid(adminDeps, existing.did, rec.newHandle)
         deps.characters.updateHandle(character.characterId, rec.newHandle)
 
-        const dest = new URL("/dashboard", webAppUrl)
+        const dest = new URL("/", webAppUrl)
         dest.searchParams.set("handle_changed", "true")
         res.redirect(dest.toString())
       } else {
@@ -236,19 +236,19 @@ const handleCallback =
           tokens: deps.tokens,
           eveCfg: deps.config.eve,
         }
-        await provisionSession(provisionDeps, character, tokens)
+        const session = await provisionSession(provisionDeps, character, tokens)
 
         if (rec.supabaseUserId) {
           deps.users.bind(rec.supabaseUserId, character.characterId)
         }
 
-        const dest = new URL("/dashboard", webAppUrl)
-        dest.searchParams.set("eve_bound", "true")
+        const dest = new URL("/", webAppUrl)
+        dest.searchParams.set("eve_bound", session.handle)
         res.redirect(dest.toString())
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      const dest = new URL("/dashboard", webAppUrl)
+      const dest = new URL("/", webAppUrl)
       dest.searchParams.set("eve_error", msg)
       res.redirect(dest.toString())
     }
