@@ -2,7 +2,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { startBinding, cancelBinding, finishBinding } from './actions'
+import { startBinding, cancelBinding } from './actions'
+import { PasswordForm } from './PasswordForm'
 
 interface AccountData {
   bound: boolean
@@ -90,19 +91,7 @@ export default async function LandingPage({
               </dd>
               <dt>Password</dt>
               <dd>
-                <form action={finishBinding}>
-                  <label htmlFor="password">
-                    <input
-                      id="password"
-                      name="password"
-                      type="password"
-                      required
-                      autoComplete="new-password"
-                      minLength={8}
-                    />
-                  </label>{' '}
-                  <button type="submit">Set</button>
-                </form>
+                <PasswordForm />
               </dd>
             </dl>
           </fieldset>
