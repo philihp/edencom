@@ -63,7 +63,8 @@ export default async function LandingPage({
 
       <p>
         New Eden citizens with Edencom social credentials may use this PDS to connect to
-        AT Protocol clients like BlueSky.
+        <a href="https://overreacted.io/open-social/">open social</a> clients over like
+        BlueSky.
       </p>
 
       {!user && (
@@ -89,13 +90,9 @@ export default async function LandingPage({
               </dd>
               <dt>Username</dt>
               <dd>
-                {account?.did ? (
-                  <Link href={`https://atproto.at/uri/at://${account?.did}`}>
-                    {account?.handle}
-                  </Link>
-                ) : (
-                  <>{account?.handle}</>
-                )}
+                <Link href={`https://bsky.app/profile/${account?.handle}`}>
+                  {account?.handle}
+                </Link>
               </dd>
               <dt>Password</dt>
               <dd>
@@ -135,21 +132,20 @@ export default async function LandingPage({
               </dd>
               <dt>Username</dt>
               <dd>
-                {account?.did ? (
-                  <Link href={`https://atproto.at/uri/at://${account?.did}`}>
-                    {account?.handle}
-                  </Link>
-                ) : (
-                  <>{account?.handle}</>
-                )}
+                <Link href={`https://bsky.app/profile/${account?.handle}`}>
+                  {account?.handle}
+                </Link>
               </dd>
               <dt>Password</dt>
               <dd>
                 <var>************</var>
               </dd>
             </dl>
-            <p>You can now login to BlueSky with these credentials.</p>
           </fieldset>
+          <p>
+            You can now connect with these credentials. You might need to specify the host
+            as your hosting provider.
+          </p>
         </>
       )}
 
