@@ -1,7 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { startBinding, cancelBinding } from './actions'
 import { PasswordForm } from './PasswordForm'
 
@@ -29,11 +28,7 @@ const fetchAccount = async (accessToken: string): Promise<AccountData> => {
   }
 }
 
-export default async function LandingPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ eve_bound?: string }>
-}) {
+export default async function LandingPage() {
   const supabase = await createClient()
   const {
     data: { user },
@@ -47,26 +42,9 @@ export default async function LandingPage({
 
   const account = session && (await fetchAccount(session.access_token))
 
-  const { eve_bound: eveHandle } = await searchParams
-  let passwordPreviouslySet = false
-  if (eveHandle) {
-    const email = eveHandle.replace('.', '@')
-    const admin = createAdminClient()
-    const { data: existingUserId } = await admin.rpc('get_user_id_by_email', {
-      user_email: email,
-    })
-    passwordPreviouslySet = !!existingUserId
-  }
-
   return (
     <main>
       <h1>Edencom Social Link</h1>
-
-      {!user && (
-        <form action={startBinding}>
-          <button type="submit">Connect</button>
-        </form>
-      )}
 
       {user && user.is_anonymous && (
         <>
@@ -126,13 +104,18 @@ export default async function LandingPage({
             </dl>
           </fieldset>
           <p>
-            You can now connect with these credentials. You might need to specify the host
-            as your hosting provider.
+            You can now connect with these credentials. Specify this host as a custom
+            hosting provider in apps like <Link href="http://bsky.app">Bluesky</Link>.
           </p>
         </>
       )}
 
-      <p></p>
+      <hr />
+
+      <p>
+        Claim your Edencom social credentials with your New Eden identity for{' '}
+        <Link href="https://atproto.com">AT Proto</Link> clients like Bluesky.
+      </p>
 
       {user && (
         <form action={cancelBinding}>
@@ -140,11 +123,11 @@ export default async function LandingPage({
         </form>
       )}
 
-      <p>
-        New Eden citizens with Edencom social credentials may use this PDS to connect to{' '}
-        <Link href="https://overreacted.io/open-social/">open social</Link> clients that
-        use <Link href="https://atproto.com">AT Proto</Link> such as BlueSky.
-      </p>
+      {!user && (
+        <form action={startBinding}>
+          <button type="submit">Connect</button>
+        </form>
+      )}
 
       {/* <pre>{JSON.stringify({ user, session, account }, undefined, 2)}</pre> */}
     </main>
