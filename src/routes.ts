@@ -164,20 +164,20 @@ const handleCallback =
       typeof req.query.error === "string" ? req.query.error : null
 
     if (errParam) {
-      const dest = new URL("/dashboard", webAppUrl)
+      const dest = new URL("/", webAppUrl)
       dest.searchParams.set("eve_error", `EVE SSO error: ${errParam}`)
       res.redirect(dest.toString())
       return
     }
     if (!code || !state) {
-      const dest = new URL("/dashboard", webAppUrl)
+      const dest = new URL("/", webAppUrl)
       dest.searchParams.set("eve_error", "Missing code or state")
       res.redirect(dest.toString())
       return
     }
     const rec = deps.stateStore.take(state)
     if (!rec) {
-      const dest = new URL("/dashboard", webAppUrl)
+      const dest = new URL("/", webAppUrl)
       dest.searchParams.set(
         "eve_error",
         "Invalid or expired state — please try again",
@@ -222,7 +222,7 @@ const handleCallback =
         await updateHandleForDid(adminDeps, existing.did, rec.newHandle)
         deps.characters.updateHandle(character.characterId, rec.newHandle)
 
-        const dest = new URL("/dashboard", webAppUrl)
+        const dest = new URL("/", webAppUrl)
         dest.searchParams.set("handle_changed", "true")
         res.redirect(dest.toString())
       } else {
@@ -236,22 +236,62 @@ const handleCallback =
           tokens: deps.tokens,
           eveCfg: deps.config.eve,
         }
-        await provisionSession(provisionDeps, character, tokens)
+        const session = await provisionSession(provisionDeps, character, tokens)
 
         if (rec.supabaseUserId) {
           deps.users.bind(rec.supabaseUserId, character.characterId)
         }
 
-        const dest = new URL("/dashboard", webAppUrl)
-        dest.searchParams.set("eve_bound", "true")
+        const dest = new URL("/", webAppUrl)
+        // dest.searchParams.set("eve_bound", session.handle)
         res.redirect(dest.toString())
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      const dest = new URL("/dashboard", webAppUrl)
+      const dest = new URL("/", webAppUrl)
       dest.searchParams.set("eve_error", msg)
       res.redirect(dest.toString())
     }
+  }
+
+// --- POST /eve/transfer-binding ---------------------------------------------
+// Called by the web app when an existing Supabase user is detected after EVE
+// OAuth. The anon user's token proves ownership of the just-bound character;
+// we re-map that binding to the existing (permanent) Supabase user ID.
+
+interface TransferBindingBody {
+  readonly targetUserId?: unknown
+}
+
+const handleTransferBinding =
+  (deps: RouterDeps) =>
+  async (req: Request, res: Response): Promise<void> => {
+    const anonUserId = await extractSupabaseUser(
+      req.headers.authorization,
+      deps.config.supabaseUrl,
+      deps.config.supabaseSecretKey,
+    )
+    if (!anonUserId) {
+      res.status(401).json({ error: "Missing or invalid authorization" })
+      return
+    }
+
+    const body = req.body as TransferBindingBody
+    const targetUserId =
+      typeof body.targetUserId === "string" ? body.targetUserId.trim() : null
+    if (!targetUserId) {
+      res.status(400).json({ error: "InvalidRequest", message: "targetUserId is required" })
+      return
+    }
+
+    const binding = deps.users.findByUserId(anonUserId)
+    if (!binding) {
+      res.status(404).json({ error: "NotBound", message: "No EVE character bound to this session" })
+      return
+    }
+
+    deps.users.bind(targetUserId, binding.characterId)
+    res.json({ ok: true })
   }
 
 // --- GET /api/account -------------------------------------------------------
@@ -462,7 +502,6 @@ const handleCreateSession =
       deps.config.supabaseUrl,
       deps.config.supabaseAnonKey,
     )
-    console.log(`[createSession] password valid=${valid}`)
     if (!valid) {
       res
         .status(401)
@@ -521,6 +560,11 @@ export const buildEveRouter = (deps: RouterDeps): Router => {
   router.get("/.well-known/atproto-did", handleAtprotoWellKnown(deps))
   router.get("/eve/login", handleLogin(deps))
   router.post("/eve/start-binding", express.json(), handleStartBinding(deps))
+  router.post(
+    "/eve/transfer-binding",
+    express.json(),
+    handleTransferBinding(deps),
+  )
   router.post(
     "/eve/start-handle-change",
     express.json(),
