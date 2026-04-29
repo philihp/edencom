@@ -61,12 +61,6 @@ export default async function LandingPage({
     <main>
       <h1>Edencom Social Link</h1>
 
-      <p>
-        New Eden citizens with Edencom social credentials may use this PDS to connect to
-        <a href="https://overreacted.io/open-social/">open social</a> clients over like
-        BlueSky.
-      </p>
-
       {!user && (
         <form action={startBinding}>
           <button type="submit">Connect</button>
@@ -156,6 +150,12 @@ export default async function LandingPage({
           <button type="submit">Disconnect</button>
         </form>
       )}
+
+      <p>
+        New Eden citizens with Edencom social credentials may use this PDS to connect to{' '}
+        <Link href="https://overreacted.io/open-social/">open social</Link> clients that
+        use <Link href="https://atproto.com">AT Proto</Link> such as BlueSky.
+      </p>
 
       {/* <pre>{JSON.stringify({ user, session, account }, undefined, 2)}</pre> */}
     </main>
