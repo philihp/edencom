@@ -1,3 +1,3 @@
-import { startUnbinding } from '@/app/actions'
+import { cancelBinding } from '@/app/actions'
 
-export const GET = async () => await startUnbinding()
+export const GET = async () => await cancelBinding()

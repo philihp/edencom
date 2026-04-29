@@ -78,7 +78,7 @@ export default async function LandingPage({
           <fieldset>
             <legend>Link</legend>
             <Image
-              src={`https://images.evetech.net/characters/${account.characterId}/portrait?size=128`}
+              src={`https://images.evetech.net/characters/${account!.characterId}/portrait?size=128`}
               alt={account?.handle ?? 'Character portrait'}
               width={128}
               height={128}
@@ -124,7 +124,7 @@ export default async function LandingPage({
           <fieldset>
             <legend>Link</legend>
             <Image
-              src={`https://images.evetech.net/characters/${account.characterId}/portrait?size=128`}
+              src={`https://images.evetech.net/characters/${account!.characterId}/portrait?size=128`}
               alt={account?.handle ?? 'Character portrait'}
               width={128}
               height={128}
