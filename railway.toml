@@ -1,6 +1,9 @@
 [build]
 builder = "nixpacks"
 
+[build.nixpacksPlan.variables]
+NIXPACKS_NODE_VERSION = "22"
+
 [deploy]
 startCommand = "node --enable-source-maps dist/index.js"
 healthcheckPath = "/xrpc/_health"
